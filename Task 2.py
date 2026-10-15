@@ -60,51 +60,83 @@ time_sheet_generation func (handles truck-specific checks; 16 max per; change ea
 
 
 """
+import pandas as pd
+
 array_size = 10
 package_table = [None] * array_size
 
 
-def hash_func(id):
-    return hash(id) % array_size
 
-def insert(id, address, deadline, city, zip, weight, status):
+def hash_func(pid):
+    return hash(pid) % array_size
 
-    key = hash_func(id)
+def insert(pid, address, deadline, city, zip, weight):
+    key = hash_func(pid)
     if package_table[key] != None:
         resize()
 
     # change to flat array? no object?
-    package_table[key](
-        {
-            "id": id,
-            "address": address,
-            "deadline": deadline,
-            "city": city,
-            "zip": zip,
-            "weight": weight,
-            "status": status
-        }
-    )
+    package_table[key] = Package(pid, address, deadline, city, zip, weight)
 
 def resize():
     global array_size, package_table
 
     array_size = array_size * 2
     temporary_table = [None] * array_size
-    for i in range(array_size/2):
-        temporary_table[hash_func(package_table[i][id])] = package_table[i]
+    for i in range(int(array_size/2)):
+        if package_table[i] == None: 
+            continue
+        temporary_table[hash_func(package_table[i].pid)] = package_table[i]
 
     package_table = temporary_table
 
+
+# Cycles through current package list. One loop to find specific truck requirements, second for FCFS package filler
+# places package ID into Truck inner list
+def package_truck_filtering():
+    return None
+
+# Takes truck package list, sorts by distance from warehouse, then closest after each package
+# Time calculated and set into delivery status
+# CORRECTION: based on time driver gets into truck. Wait to call function until driver is allocated???
+def route_sorting():
+    distance_df = pd.read_csv('WGUPS Distance Table')
+    return None        
+
+# What was my final goal again....?
+
+
+def package_table_import(file):
+    df = pd.read_csv(file)
+    for i in range(len(df)):
+        insert(df.iloc[i].iat[0], df.iloc[i].iat[1], df.iloc[i].iat[2], df.iloc[i].iat[3], df.iloc[i].iat[4], df.iloc[i].iat[5])
+
+
+
         
+
+
+
     
 class Package:
-    def __init__(self, pid, address, deadline, city, zip, weight, status):
+    def __init__(self, pid, address, deadline, city, zip, weight):
         self.pid = pid
         self.address = address
         self.deadline = deadline
         self.city = city
         self.zip = zip
         self.weight = weight
-        self.status = status
+        self.status = 'warehouse'
         
+
+
+
+###################### Main #######################
+
+
+
+
+
+
+package_table_import('WGUPS Package File.csv')
+print("finished")
