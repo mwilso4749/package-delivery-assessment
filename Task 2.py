@@ -88,6 +88,9 @@ import pandas as pd
 # SECTION A - Hash Table + Insert Function
 array_size = 10
 package_table = [None] * array_size
+truck1 = []
+truck2 = []
+truck3 = []
 
 def hash_func(pid):
     return hash(pid) % array_size
@@ -121,7 +124,41 @@ def lookup(pid):
 # Cycles through current package list. One loop to find specific truck requirements, second for FCFS package filler
 # places package ID into Truck inner list
 def package_truck_filtering():
-    # for loop all special conditions
+    global truck1, truck2, truck3, package_table
+    
+    def truck_loading(truck, package_number):
+        truck.append(package_table[package_number])
+    
+    # loads first two trucks with time sensitive
+    flip_tracker = 1
+    for i in range(len(package_table)):
+        if package_table[i].expected_time == None or package_table[i].status == "Delivered": continue
+        package_table[i].current_truck = flip_tracker
+        # no checks for size limit
+        if flip_tracker == 1: 
+            truck1.append(package_table[i])
+            flip_tracker = 2
+        else: 
+            truck2.append(package_table[i])
+            flip_tracker = 1
+            package_table[i].current_truck = 1
+
+    # truck specific
+    for i in range(len(package_table)):
+        if package_table[i].status[0:5] == 'Truck':
+            truck_number = package_table[i].status[-1:]
+            match truck_number:
+                case 1:
+                    truck1.append(package_table[i])
+                    package_table[i]
+        
+    # package bundling
+
+
+
+
+    
+    # for loop all special conditions: time first, then bundling
     # 3 16 sized arrays for each truck; check for cap
     # 
 
@@ -136,6 +173,9 @@ def package_truck_filtering():
 # MUST be in order of time incrementation
 def route_sorting():
     distance_df = pd.read_csv('WGUPS Distance Table')
+
+    # mark all packages as en route
+    # time calculations
     return None        
 
 # What was my final goal again....?
@@ -164,6 +204,7 @@ class Package:
         self.weight = weight
         self.status = status
         self.delivery_time = [None, None]
+        self.current_truck = None
         if expected_time == "EOD": self.expected_time = None
         
     
@@ -184,10 +225,11 @@ class Package:
     def __str__(self):
         return f"=========================================\nPackage ID: {self.pid}\nAddress: {self.address}\nDeadline: {self.deadline}\nCity: {self.city}\nZip: {self.zip}\nWeight: {self.weight}{self.status_formatting()}\n========================================="
 
-
-
     
-
+# class Truck:
+#     def __init__(self):
+#         self.packages = [None] * 16
+#         self.
         
 ###################### Main #######################
 
