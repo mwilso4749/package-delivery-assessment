@@ -78,12 +78,12 @@ time_sheet_generation func (handles truck-specific checks; 16 max per; change ea
 
 
 Reset:
-Bundle by time slots. No- increment time variable?
+Bundle by time slots. No- increment time variable?  
 
 
 """
 import pandas as pd
-
+# Launch time, 8am
 
 # SECTION A - Hash Table + Insert Function
 array_size = 10
@@ -92,13 +92,13 @@ package_table = [None] * array_size
 def hash_func(pid):
     return hash(pid) % array_size
 
-def insert(pid, address, deadline, city, zip, weight):
+def insert(pid, address, deadline, city, zip, expected_time, weight, status):
     key = hash_func(pid)
     if package_table[key] != None:
         resize()
 
     # change to flat array? no object?
-    package_table[key] = Package(pid, address, deadline, city, zip, weight)
+    package_table[key] = Package(pid, address, deadline, city, zip, expected_time, weight, status)
 
 def resize():
     global array_size, package_table
@@ -121,11 +121,19 @@ def lookup(pid):
 # Cycles through current package list. One loop to find specific truck requirements, second for FCFS package filler
 # places package ID into Truck inner list
 def package_truck_filtering():
+    # for loop all special conditions
+    # 3 16 sized arrays for each truck; check for cap
+    # 
+
+
+
+
     return None
 
 # Takes truck package list, sorts by distance from warehouse, then closest after each package
 # Time calculated and set into delivery status
 # CORRECTION: based on time driver gets into truck. Wait to call function until driver is allocated???
+# MUST be in order of time incrementation
 def route_sorting():
     distance_df = pd.read_csv('WGUPS Distance Table')
     return None        
@@ -136,7 +144,7 @@ def route_sorting():
 def package_table_import(file):
     df = pd.read_csv(file)
     for i in range(len(df)):
-        insert(df.iloc[i].iat[0], df.iloc[i].iat[1], df.iloc[i].iat[2], df.iloc[i].iat[3], df.iloc[i].iat[4], df.iloc[i].iat[5])
+        insert(df.iloc[i].iat[0], df.iloc[i].iat[1], df.iloc[i].iat[2], df.iloc[i].iat[3], df.iloc[i].iat[4], df.iloc[i].iat[5], df.iloc[i].iat[6], df.iloc[i].iat[7])
 
 
 
@@ -144,21 +152,43 @@ def package_table_import(file):
 
 
 
-    
+
 class Package:
-    def __init__(self, pid, address, deadline, city, zip, weight):
+    def __init__(self, pid, address, deadline, city, zip, expected_time, weight, status = 'Warehouse'):
         self.pid = pid
         self.address = address
         self.deadline = deadline
         self.city = city
         self.zip = zip
+        self.expected_time = expected_time
         self.weight = weight
-        self.status = 'warehouse'
+        self.status = status
+        self.delivery_time = [None, None]
+        if expected_time == "EOD": self.expected_time = None
         
+    
+    def status_formatting(self):
+        if self.status == None:
+            return
+
+        if self.status == 'Delivered' or self.status == 'Delayed' or self.status == 'En Route':
+            return f"\nStatus: {self.status} - {self.delivery_time}"
+
+        return f"\nStatus: {self.status}"
+
+    def status_update(self, status, time = [None, None]):
+            if time != [None, None]:
+                self.delivery_time = time
+            self.status = status
+
     def __str__(self):
-        return f"Package ID: {self.pid}\nAddress: {self.address}\nDeadline: {self.deadline}\nCity: {self.city}\nZip: {self.zip}\nWeight: {self.weight}\nStatus: {self.status}"
+        return f"=========================================\nPackage ID: {self.pid}\nAddress: {self.address}\nDeadline: {self.deadline}\nCity: {self.city}\nZip: {self.zip}\nWeight: {self.weight}{self.status_formatting()}\n========================================="
 
 
+
+    
+
+        
 ###################### Main #######################
 
 
@@ -167,5 +197,4 @@ class Package:
 
 
 package_table_import('WGUPS Package File.csv')
-print(lookup(12))
-print("finished")
+print(lookup(9))
