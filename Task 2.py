@@ -133,9 +133,9 @@ def package_truck_filtering(): # Just an initial...?
     flip_tracker = 1
     for i in range(len(package_table)):
         if package_table[i] == None: continue
-        # print(package_table[i].status)
-        if package_table[i].expected_time == None or package_table[i].status == "Delivered" or package_table[i].status[0:7] == 'Delayed': continue
-        truck_loading(flip_tracker, i)
+        if package_table[i].expected_time == None or package_table[i].status == 'nan': continue
+        if package_table[i].status == "Delivered" or str(package_table[i].status)[0:7] == 'Delayed': continue
+        truck_loading(int(flip_tracker), i)
         if flip_tracker == 1: flip_tracker = 2
         else: flip_tracker = 1
 
@@ -143,7 +143,7 @@ def package_truck_filtering(): # Just an initial...?
     for i in range(len(package_table)):
         if package_table[i] == None: continue
         if package_table[i].status[0:5] == 'Truck':
-            truck_number = package_table[i].status[-1:]
+            truck_number = int(package_table[i].status[-1:])
             # no collision or overflow handling
             truck_loading(truck_number, i)
 
@@ -151,6 +151,7 @@ def package_truck_filtering(): # Just an initial...?
     # Loads initial pacakge
     for i in range(len(package_table)):
         if package_table[i] == None: continue
+        pair_list = None
         if package_table[i].status[0:7] == 'Package':
             pair_list = package_table[i].status.split(",")
             while 'Package' in pair_list:
@@ -159,24 +160,25 @@ def package_truck_filtering(): # Just an initial...?
 
         # Loops to find currently loaded package
         # Does not account for all paired packages being unloaded
-        pivot = None # The actual package itself
-        for package in pair_list: # package is the pid key, not index
-            if package_table[hash_func(package)].current_truck != None:
-                pivot = package_table[hash_func(package)]
-                pair_list.remove(package) # remove key
+        if pair_list != None:
+            pivot = None # The actual package itself
+            for package in pair_list: # package is the pid key, not index
+                if package_table[hash_func(package)].current_truck != None:
+                    pivot = package_table[hash_func(package)]
+                    pair_list.remove(package) # remove key
 
-        # Loops to match all paired packages to same truck
-        for package in pair_list:
-            indx = hash_func(package)
+            # Loops to match all paired packages to same truck
+            for package in pair_list:
+                indx = hash_func(package)
 
-            # remove all packages from respective truck
-            truck_list[package_table[indx].current_truck.pop(package_table[indx])]
+                # remove all packages from respective truck
+                truck_list[package_table[indx].current_truck.pop(package_table[indx])]
 
-            # match tracking to pivot
-            package_table[indx].current_truck = pivot.current_truck
+                # match tracking to pivot
+                package_table[indx].current_truck = pivot.current_truck
 
-            # add all trucks to pivot truck
-            truck_loading(pivot.current_truck, indx)
+                # add all trucks to pivot truck
+                truck_loading(pivot.current_truck, indx)
 
         
 
@@ -229,10 +231,11 @@ class Package:
         self.zip = zip
         self.expected_time = expected_time
         self.weight = weight
-        self.status = status
+        self.status = str(status)
         self.delivery_time = [None, None]
         self.current_truck = None
         if expected_time == "EOD": self.expected_time = None
+        if status == 'nan': self.status = None
         
     
     def status_formatting(self):
