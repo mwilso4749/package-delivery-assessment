@@ -88,9 +88,7 @@ import pandas as pd
 # SECTION A - Hash Table + Insert Function
 array_size = 10
 package_table = [None] * array_size
-truck1 = []
-truck2 = []
-truck3 = []
+truck_list = [[], [], []]
 
 def hash_func(pid):
     return hash(pid) % array_size
@@ -123,36 +121,65 @@ def lookup(pid):
 
 # Cycles through current package list. One loop to find specific truck requirements, second for FCFS package filler
 # places package ID into Truck inner list
-def package_truck_filtering():
-    global truck1, truck2, truck3, package_table
+def package_truck_filtering(): # Just an initial...?
+    global package_table, truck_list
     
-    def truck_loading(truck, package_number):
-        truck.append(package_table[package_number])
+    def truck_loading(truck_number, package_index):
+        truck_list[truck_number].append(package_table[package_index])
+        package_table[package_index].current_truck = truck_number
+        # package_table[package_number].status = 'En Route' --------- ADD WHEN DEPARTING TRUCK
     
     # loads first two trucks with time sensitive
     flip_tracker = 1
     for i in range(len(package_table)):
-        if package_table[i].expected_time == None or package_table[i].status == "Delivered": continue
-        package_table[i].current_truck = flip_tracker
-        # no checks for size limit
-        if flip_tracker == 1: 
-            truck1.append(package_table[i])
-            flip_tracker = 2
-        else: 
-            truck2.append(package_table[i])
-            flip_tracker = 1
-            package_table[i].current_truck = 1
+        if package_table[i] == None: continue
+        # print(package_table[i].status)
+        if package_table[i].expected_time == None or package_table[i].status == "Delivered" or package_table[i].status[0:7] == 'Delayed': continue
+        truck_loading(flip_tracker, i)
+        if flip_tracker == 1: flip_tracker = 2
+        else: flip_tracker = 1
 
-    # truck specific
+    # Loads truck-specific packages
     for i in range(len(package_table)):
+        if package_table[i] == None: continue
         if package_table[i].status[0:5] == 'Truck':
             truck_number = package_table[i].status[-1:]
-            match truck_number:
-                case 1:
-                    truck1.append(package_table[i])
-                    package_table[i]
+            # no collision or overflow handling
+            truck_loading(truck_number, i)
+
+    # Loads package pairings
+    # Loads initial pacakge
+    for i in range(len(package_table)):
+        if package_table[i] == None: continue
+        if package_table[i].status[0:7] == 'Package':
+            pair_list = package_table[i].status.split(",")
+            while 'Package' in pair_list:
+                pair_list.remove('Package')
+            pair_list.append(package_table[i].pid) # pair_list now only contains the package keys
+
+        # Loops to find currently loaded package
+        # Does not account for all paired packages being unloaded
+        pivot = None # The actual package itself
+        for package in pair_list: # package is the pid key, not index
+            if package_table[hash_func(package)].current_truck != None:
+                pivot = package_table[hash_func(package)]
+                pair_list.remove(package) # remove key
+
+        # Loops to match all paired packages to same truck
+        for package in pair_list:
+            indx = hash_func(package)
+
+            # remove all packages from respective truck
+            truck_list[package_table[indx].current_truck.pop(package_table[indx])]
+
+            # match tracking to pivot
+            package_table[indx].current_truck = pivot.current_truck
+
+            # add all trucks to pivot truck
+            truck_loading(pivot.current_truck, indx)
+
         
-    # package bundling
+
 
 
 
@@ -239,4 +266,5 @@ class Package:
 
 
 package_table_import('WGUPS Package File.csv')
-print(lookup(9))
+# print(lookup(9))
+package_truck_filtering()
