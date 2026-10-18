@@ -130,14 +130,14 @@ def package_truck_filtering(): # Just an initial...?
         # package_table[package_number].status = 'En Route' --------- ADD WHEN DEPARTING TRUCK
     
     # loads first two trucks with time sensitive
-    flip_tracker = 1
+    flip_tracker = 0
     for i in range(len(package_table)):
         if package_table[i] == None: continue
         if package_table[i].expected_time == None or package_table[i].status == 'nan': continue
         if package_table[i].status == "Delivered" or str(package_table[i].status)[0:7] == 'Delayed': continue
         truck_loading(int(flip_tracker), i)
-        if flip_tracker == 1: flip_tracker = 2
-        else: flip_tracker = 1
+        if flip_tracker == 0: flip_tracker = 1
+        else: flip_tracker = 0
 
     # Loads truck-specific packages
     for i in range(len(package_table)):
@@ -153,10 +153,13 @@ def package_truck_filtering(): # Just an initial...?
         if package_table[i] == None: continue
         pair_list = None
         if package_table[i].status[0:7] == 'Package':
-            pair_list = package_table[i].status.split(",")
+            pair_list = package_table[i].status.split(", ")
             while 'Package' in pair_list:
                 pair_list.remove('Package')
+            for i in range(len(pair_list)): pair_list[i] = int(pair_list[i])
             pair_list.append(package_table[i].pid) # pair_list now only contains the package keys
+
+            # why is this only becoming 21? it should be 13
 
         # Loops to find currently loaded package
         # Does not account for all paired packages being unloaded
@@ -172,7 +175,7 @@ def package_truck_filtering(): # Just an initial...?
                 indx = hash_func(package)
 
                 # remove all packages from respective truck
-                truck_list[package_table[indx].current_truck.pop(package_table[indx])]
+                truck_list[package_table[indx].current_truck].pop(package_table[indx])
 
                 # match tracking to pivot
                 package_table[indx].current_truck = pivot.current_truck
@@ -224,7 +227,7 @@ def package_table_import(file):
 
 class Package:
     def __init__(self, pid, address, deadline, city, zip, expected_time, weight, status = 'Warehouse'):
-        self.pid = pid
+        self.pid = int(pid)
         self.address = address
         self.deadline = deadline
         self.city = city
