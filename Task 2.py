@@ -116,7 +116,7 @@ def resize():
 # SECTION B - Lookup Function with Package ID: Connects to class .toString()
 def lookup(pid):
     global package_table
-    return f"{package_table[pid]}"
+    return f"{package_table[hash_func(pid)]}"
 
 
 # Cycles through current package list. One loop to find specific truck requirements, second for FCFS package filler
@@ -145,56 +145,41 @@ def package_truck_filtering(): # Just an initial...?
         if package_table[i].status[0:5] == 'Truck':
             truck_number = int(package_table[i].status[-1:])
             # no collision or overflow handling
-            truck_loading(truck_number, i)
+            truck_loading(truck_number-1, i)
 
     # Loads package pairings
     # Loads initial pacakge
+    temp_attached_packages = []
     for i in range(len(package_table)):
         if package_table[i] == None: continue
-        pair_list = None
-        if package_table[i].status[0:7] == 'Package':
-            pair_list = package_table[i].status.split(", ")
-            while 'Package' in pair_list:
-                pair_list.remove('Package')
-            for i in range(len(pair_list)): pair_list[i] = int(pair_list[i])
-            pair_list.append(package_table[i].pid) # pair_list now only contains the package keys
-
-            # why is this only becoming 21? it should be 13
-
-        # Loops to find currently loaded package
-        # Does not account for all paired packages being unloaded
-        if pair_list != None:
-            pivot = None # The actual package itself
-            for package in pair_list: # package is the pid key, not index
-                if package_table[hash_func(package)].current_truck != None:
-                    pivot = package_table[hash_func(package)]
-                    pair_list.remove(package) # remove key
-
-            # Loops to match all paired packages to same truck
-            for package in pair_list:
-                indx = hash_func(package)
-
-                # remove all packages from respective truck
-                truck_list[package_table[indx].current_truck].pop(package_table[indx])
-
-                # match tracking to pivot
-                package_table[indx].current_truck = pivot.current_truck
-
-                # add all trucks to pivot truck
-                truck_loading(pivot.current_truck, indx)
-
+        # loop through all packges for attached_packages
+        # combine all arrays, store into smallest number
+        # call function below with new array
         
+        # Only checks one instance of a package pair list. not different sets
+        temp_attached_packages.extend(package_table[i].attached_packages)
 
 
+    # Loops to match all paired packages to same truck
+    temp_attached_packages = list(set(temp_attached_packages))
+    pivot = package_table[temp_attached_packages.pop()]
+    for package in temp_attached_packages:
+        indx = hash_func(package)
 
+        # remove all packages from respective truck
+        if package_table[indx].current_truck != None: 
+            for i in range(len(truck_list[package_table[indx].current_truck])):
+                if truck_list[package_table[indx].current_truck][i] == package_table[indx]:
+                    truck_list[package_table[indx].current_truck].pop(i)
+                    break
+            
+        # match tracking to pivot
+        package_table[indx].current_truck = pivot.current_truck
 
+        # add all trucks to pivot truck
+        truck_loading(pivot.current_truck, indx)
 
-    
-    # for loop all special conditions: time first, then bundling
-    # 3 16 sized arrays for each truck; check for cap
-    # 
-
-
+            # break? cut out all current iteration of checked numbers
 
 
     return None
@@ -204,8 +189,9 @@ def package_truck_filtering(): # Just an initial...?
 # CORRECTION: based on time driver gets into truck. Wait to call function until driver is allocated???
 # MUST be in order of time incrementation
 def route_sorting():
+    global truck_list
     distance_df = pd.read_csv('WGUPS Distance Table')
-
+    
     # mark all packages as en route
     # time calculations
     return None        
@@ -237,8 +223,19 @@ class Package:
         self.status = str(status)
         self.delivery_time = [None, None]
         self.current_truck = None
+        self.attached_packages = []
         if expected_time == "EOD": self.expected_time = None
         if status == 'nan': self.status = None
+        self.package_attachment()
+
+    def package_attachment(self):
+        if self.status[0:7] == 'Package':
+            self.attached_packages = self.status.split(", ")
+            while 'Package' in self.attached_packages:
+                self.attached_packages.remove('Package')
+            for i in range(len(self.attached_packages)): self.attached_packages[i] = int(self.attached_packages[i])
+            self.attached_packages.append(self.pid)
+
         
     
     def status_formatting(self):
@@ -272,5 +269,14 @@ class Package:
 
 
 package_table_import('WGUPS Package File.csv')
-# print(lookup(9))
+# print(lookup(14))
+
 package_truck_filtering()
+
+# for package in package_table[hash_func(14)].attached_packages:
+#     print(package)
+
+for truck in truck_list:
+    print("=======Truck=======")
+    for i in range(len(truck)):
+        print(truck[i].pid)
