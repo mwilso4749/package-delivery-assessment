@@ -83,6 +83,7 @@ Bundle by time slots. No- increment time variable?
 
 """
 import pandas as pd
+from datetime import datetime, timedelta
 # Launch time, 8am
 
 # SECTION A - Hash Table + Insert Function
@@ -188,10 +189,63 @@ def package_truck_filtering(): # Just an initial...?
 # Time calculated and set into delivery status
 # CORRECTION: based on time driver gets into truck. Wait to call function until driver is allocated???
 # MUST be in order of time incrementation
-def route_sorting():
-    global truck_list
-    distance_df = pd.read_csv('WGUPS Distance Table')
+def route_sorting(): # Intial only. no new time adjustments
+    global truck_list, package_table
+    distance_df = pd.read_csv('WGUPS Distance Table.csv', index_col=0)
+    row_index_list = distance_df.index.tolist()
+    row_columns_list = distance_df.columns.tolist()
+    # Loop through all sets and place index values for row + col for each package
+    for package in package_table:
+        for i in range(len(row_index_list)):
+            if package.address in row_index_list[i]:
+                package.distance_row_col[0] = i
+                break
+        for i in range(len(row_columns_list)):
+            if package.address in row_columns_list[i]:
+                package.distance_row_col[1] = i
+                break
+
+    # Resort based on distance from eachother
     
+    def truck_sort(truck):
+        temp_array = []
+        truck_time = datetime(8)
+        # Init loop to find lowest value from HUB?
+        # repeat with [i-1] -> [i]? 
+        # Loop just to search, hold lowest value, then insert into array? 
+        # NEED TO ADD CHECK FOR TIME PRIORITY
+        last_compare_value = [0,0]
+        for i in range(len(truck)):
+            lowest_dist_value = 100;
+            lowest_index_value = None; # Index, not PID
+            for k in range(len(truck)):
+                distance = distance_df.iat[truck[k].distance_row_col[0], last_compare_value[1]] # Actual measured distance
+                if lowest_index_value == None:
+                    lowest_index_value = k
+                    continue
+                if lowest_dist_value > distance:
+                    lowest_index_value = k
+                    lowest_dist_value = distance
+            travel_calc_minutes = int((lowest_dist_value/18)*60)
+            travel_time = timedelta(0, 0, 0, 0, int(travel_calc_minutes%60), int(travel_calc_minutes/60))
+            truck[lowest_index_value].status = 'En Route'
+            truck[lowest_index_value].delivery_time = truck_time + travel_time
+            truck_time = truck_time + travel_time
+        last_compare_value = truck[k].distance_row_col
+        temp_array.append(truck.pop(k))
+        return temp_array
+            
+    for i in range(len(truck_list)):
+        truck_list[i] = truck_sort(truck_list[i])
+            
+
+                
+
+
+    # Loop through each truck
+    # search with distance_df.loc[truck_list[i].address]
+
+
     # mark all packages as en route
     # time calculations
     return None        
@@ -205,7 +259,7 @@ def package_table_import(file):
         insert(df.iloc[i].iat[0], df.iloc[i].iat[1], df.iloc[i].iat[2], df.iloc[i].iat[3], df.iloc[i].iat[4], df.iloc[i].iat[5], df.iloc[i].iat[6], df.iloc[i].iat[7])
 
 
-
+# Reload function? take final time of delivery + distance back to warehouse...? switch trucks or reload or something
         
 
 
@@ -224,6 +278,8 @@ class Package:
         self.delivery_time = [None, None]
         self.current_truck = None
         self.attached_packages = []
+        self.distance_row_col = [None, None]
+
         if expected_time == "EOD": self.expected_time = None
         if status == 'nan': self.status = None
         self.package_attachment()
@@ -276,7 +332,19 @@ package_truck_filtering()
 # for package in package_table[hash_func(14)].attached_packages:
 #     print(package)
 
-for truck in truck_list:
-    print("=======Truck=======")
-    for i in range(len(truck)):
-        print(truck[i].pid)
+# for truck in truck_list:
+#     print("=======Truck=======")
+#     for i in range(len(truck)):
+#         print(truck[i].pid)
+
+distance_df = pd.read_csv('WGUPS Distance Table.csv', index_col=0)
+# print(distance_df.loc['2010 W 500 S\n(84104)'])
+# print(distance_df.iterrows())
+row_index_list = distance_df.index.tolist()
+for i in row_index_list:
+    print(i)
+
+# All row labels to search through 
+
+
+# df.iat[0,0] - cell grabbing
