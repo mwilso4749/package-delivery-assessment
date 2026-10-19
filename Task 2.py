@@ -90,6 +90,8 @@ from datetime import datetime, timedelta
 array_size = 10
 package_table = [None] * array_size
 truck_list = [[], [], []]
+truck_time = [datetime(1, 1, 1, hour=8), datetime(1, 1, 1, hour=8), datetime(1, 1, 1, hour=8)]
+
 
 def hash_func(pid):
     return hash(pid) % array_size
@@ -190,7 +192,7 @@ def package_truck_filtering(): # Just an initial...?
 # CORRECTION: based on time driver gets into truck. Wait to call function until driver is allocated???
 # MUST be in order of time incrementation
 def route_sorting(): # Intial only. no new time adjustments
-    global truck_list, package_table
+    global truck_list, package_table, truck_time
     distance_df = pd.read_csv('WGUPS Distance Table.csv', index_col=0)
     row_index_list = distance_df.index.tolist()
     row_columns_list = distance_df.columns.tolist()
@@ -208,46 +210,39 @@ def route_sorting(): # Intial only. no new time adjustments
 
     # Resort based on distance from eachother
     
-    def truck_sort(truck):
+    def truck_sort(truck, relative_time):
         temp_array = []
-        truck_time = datetime(1, 1, 1, hour=8)
-        print(truck_time.strftime('%H:%M %p'))
-
-       
-        # NEED TO ADD CHECK FOR TIME PRIORITY
+              
+        # Sorting truck cargo based on distance only
         last_compare_value = [0,0]
         for i in range(len(truck)):
-            lowest_dist_value = 100;
-            lowest_index_value = None; # Index, not PID
+            lowest_dist_value = 100
+            lowest_index_value = None
             for k in range(len(truck)):
-                
+                # Measures least distance between each package
                 distance = distance_df.iat[truck[k].distance_row_col[0], last_compare_value[1]]
                 if str(distance) == 'nan':
                     distance = distance_df.iat[last_compare_value[0], truck[k].distance_row_col[1]]
-
-                 # Actual measured distance
-                if lowest_index_value == None:
+                 # Setting lowest package distance
+                if lowest_index_value == None or lowest_dist_value > distance:
                     lowest_index_value = k
                     lowest_dist_value = distance
-                    continue
-                if lowest_dist_value > distance:
-                    lowest_dist_value = distance
-                    lowest_index_value = k
-                    
-
+                
             travel_calc_minutes = int((lowest_dist_value/18)*60)
             travel_time = timedelta(0, 0, 0, 0, int(travel_calc_minutes%60), int(travel_calc_minutes/60))
             truck[lowest_index_value].status = 'En Route'
-            truck_time = truck_time + travel_time
-            truck[lowest_index_value].delivery_time = truck_time.strftime('%H:%M %p')
-            print(truck_time.strftime('%H:%M %p'))
+            relative_time = relative_time + travel_time
+            truck[lowest_index_value].delivery_time = relative_time.strftime('%H:%M %p')
             last_compare_value = truck[lowest_index_value].distance_row_col
             temp_array.append(truck.pop(lowest_index_value))
-        return temp_array
+
+        # Change status to delivery; add in return to warehouse time?
+        
+        return temp_array, relative_time 
             
-    # for i in range(len(truck_list)):
-    #     truck_list[i] = truck_sort(truck_list[i])
-    truck_list[0] = truck_sort(truck_list[0])
+    for i in range(len(truck_list)):
+        truck_list[i], truck_time[i] = truck_sort(truck_list[i], truck_time[i])
+
             
 
                 
@@ -323,12 +318,7 @@ class Package:
         return f"=========================================\nPackage ID: {self.pid}\nAddress: {self.address}\nDeadline: {self.deadline}\nCity: {self.city}\nZip: {self.zip}\nWeight: {self.weight}{self.status_formatting()}\n========================================="
 
     
-# class Truck:
-#     def __init__(self):
-#         self.packages = [None] * 16
-#         self.
-        
-###################### Main #######################
+
 
 
 
@@ -343,6 +333,7 @@ route_sorting()
 
 
 print(lookup(14))
+print(truck_time[0].strftime('%H:%M %p'))
 
 
 # for package in package_table[hash_func(14)].attached_packages:
