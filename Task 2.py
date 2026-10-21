@@ -267,11 +267,23 @@ def package_table_import(file):
 
 
 
+
+# Remove package_table_import with native CSV importer
+# Remove all hash functions from above
+# Remove truck_list
+# Remove all time management with DateTime as Time import
+# Move package_sorting into Truck class
+# Move package_loading into Truck Classs
+
+
+
         
 '''
 DELIVERY: 
-- loops through all packages, applies "status = en route" AND "departure_time = [time]"
-- loops through schedule and applies "status = delivered" AND "delivered_time = [time]"
+- Take CURRENT truck time with each time check for the following loop updates
+- loops through all packages, applies "status = en route" AND "departure_time = [time]" [CURRENT TRUCK TIME]
+- loops through schedule and applies "status = delivered" AND "delivered_time = [time]" [DISTANCE CALCULATED TIME] ->
+    - Compare package.distant_row_col to previous, milage/18
 '''
 def delivery(truck):
     return truck
@@ -283,7 +295,41 @@ def delivery(truck):
 # interface - speciifc package status at time -> all packages at time
 # package all info print
 # package - 2 time stamps - time of leave + arrival time
-# replace all time with 
+# replace all time with date_time() class
+
+# add hash_table class
+class HashTable:
+    def __init__(self, size):
+        self.table = [None] * size
+        return
+    def insert(self, pid):
+        return
+    def resize(self):
+        return
+    def hash_function(self, pid):
+        return
+
+class DateTime:
+    def __init__(self, hours, minutes):
+        self.time = [hours, minutes]
+        return
+    def add(self, minutes):
+        temp_minutes = minutes + self.time[1]
+        self.time[0] += int(temp_minutes/60)
+        self.time[1] = temp_minutes%60
+    def __str__(self):
+        return f'{self.time[0]}:{self.time[1]}'
+
+# Finsh out and replace truck_list
+class Truck:
+    def __init__(self):
+        self.payload = []
+        self.current_time = DateTime(8,00) # Used for delivery and 
+    def package_loading(self, package):
+        return
+    def package_sorting(self):
+        # sort by each pacakge distance to eachother
+        return
 
 class Package:
     def __init__(self, pid, address, deadline, city, zip, expected_time, weight, status = 'Warehouse'): 
@@ -298,10 +344,16 @@ class Package:
         self.expected_time = expected_time
         self.weight = weight
         self.status = str(status)
+
+        # 2d array, holds status and time of IMPLEMENTATION
+        self.status_changes
+
+        # 2d array, holds address and TIME OF IMPLEMENTATION
+        self.address_changes
         
-        
+        # date_time() objects
         self.departure_time
-        self.delivery_time = [None, None] # replace with time object
+        self.delivery_time # replace with time object
       
         self.current_truck = None
         self.attached_packages = []
@@ -341,30 +393,22 @@ class Package:
         return f"=========================================\nPackage ID: {self.pid}\nAddress: {self.address}\nDeadline: {self.deadline}\nCity: {self.city}\nZip: {self.zip}\nWeight: {self.weight}{self.status_formatting()}\n========================================="
 
     # add function to take time, then package (default to all) and post all reports at that time
+    @staticmethod
+    def time_lookup(time, table: HashTable, pid = None):
+        
+        if pid != None:
+            # time_calculation(time, pid)
+            return
+
+        def time_calculation(inner_time, package):
+            # check through package status_change array
+            # inverted check- if time of implementation (status_changes[1]) > time, continue
+            # return status from status_changes[0] with print statement
+            # ======
+            # REPEAT FOR ADDRESS (address_changes)
+        
+        return
     
-# add hash_table class
-class hash_table:
-    def __init__(self, size):
-        self.table = [None] * size
-        return
-    def insert(self, pid):
-        return
-    def resize(self):
-        return
-    def hash_function(self, pid):
-        return
-
-class date_time:
-    def __init__(self, hours, minutes):
-        self.time = [hours, minutes]
-        return
-    def add(self, minutes):
-        temp_minutes = minutes + self.time[1]
-        self.time[0] += int(temp_minutes/60)
-        self.time[1] = temp_minutes%60
-    def __str__(self):
-        return f'{self.time[0]}:{self.time[1]}'
-
 
 
 
@@ -379,3 +423,11 @@ print(lookup(14))
 # print(truck_time[0].strftime('%H:%M %p'))
 
 
+temp_package_table = HashTable(10)
+#for loop inserting all packages into table instance with temp_package_table.insert(package)
+
+# Delivery
+# Truck switch into deliver after truck 1 returns
+
+
+print(Package.time_lookup(DateTime(8,30), temp_package_table))
