@@ -82,6 +82,7 @@ Bundle by time slots. No- increment time variable?
 
 
 """
+# NO IMPORTS - csv -> csv reader
 import pandas as pd
 from datetime import datetime, timedelta
 # Launch time, 8am
@@ -265,14 +266,30 @@ def package_table_import(file):
         insert(df.iloc[i].iat[0], df.iloc[i].iat[1], df.iloc[i].iat[2], df.iloc[i].iat[3], df.iloc[i].iat[4], df.iloc[i].iat[5], df.iloc[i].iat[6], df.iloc[i].iat[7])
 
 
-# Reload function? take final time of delivery + distance back to warehouse...? switch trucks or reload or something
+
         
+'''
+DELIVERY: 
+- loops through all packages, applies "status = en route" AND "departure_time = [time]"
+- loops through schedule and applies "status = delivered" AND "delivered_time = [time]"
+'''
+def delivery(truck):
+    return truck
 
+# ===========================
+# 
 
-
+    # array of all distance comparisons in a truck ???
+# interface - speciifc package status at time -> all packages at time
+# package all info print
+# package - 2 time stamps - time of leave + arrival time
+# replace all time with 
 
 class Package:
-    def __init__(self, pid, address, deadline, city, zip, expected_time, weight, status = 'Warehouse'):
+    def __init__(self, pid, address, deadline, city, zip, expected_time, weight, status = 'Warehouse'): 
+        # add en route time stamp
+        # horizontal report for __str__
+        # input for time print request differnet function
         self.pid = int(pid)
         self.address = address
         self.deadline = deadline
@@ -281,7 +298,11 @@ class Package:
         self.expected_time = expected_time
         self.weight = weight
         self.status = str(status)
-        self.delivery_time = [None, None]
+        
+        
+        self.departure_time
+        self.delivery_time = [None, None] # replace with time object
+      
         self.current_truck = None
         self.attached_packages = []
         self.distance_row_col = [None, None]
@@ -314,13 +335,35 @@ class Package:
                 self.delivery_time = time
             self.status = status
 
+    # Make horizontal as a report
+    # add if check to change address of one package to old before a time
     def __str__(self):
         return f"=========================================\nPackage ID: {self.pid}\nAddress: {self.address}\nDeadline: {self.deadline}\nCity: {self.city}\nZip: {self.zip}\nWeight: {self.weight}{self.status_formatting()}\n========================================="
 
+    # add function to take time, then package (default to all) and post all reports at that time
     
+# add hash_table class
+class hash_table:
+    def __init__(self, size):
+        self.table = [None] * size
+        return
+    def insert(self, pid):
+        return
+    def resize(self):
+        return
+    def hash_function(self, pid):
+        return
 
-
-
+class date_time:
+    def __init__(self, hours, minutes):
+        self.time = [hours, minutes]
+        return
+    def add(self, minutes):
+        temp_minutes = minutes + self.time[1]
+        self.time[0] += int(temp_minutes/60)
+        self.time[1] = temp_minutes%60
+    def __str__(self):
+        return f'{self.time[0]}:{self.time[1]}'
 
 
 
@@ -333,25 +376,6 @@ route_sorting()
 
 
 print(lookup(14))
-print(truck_time[0].strftime('%H:%M %p'))
+# print(truck_time[0].strftime('%H:%M %p'))
 
 
-# for package in package_table[hash_func(14)].attached_packages:
-#     print(package)
-
-# for truck in truck_list:
-#     print("=======Truck=======")
-#     for i in range(len(truck)):
-#         print(truck[i].pid)
-
-# distance_df = pd.read_csv('WGUPS Distance Table.csv', index_col=0)
-# # print(distance_df.loc['2010 W 500 S\n(84104)'])
-# # print(distance_df.iterrows())
-# row_index_list = distance_df.index.tolist()
-# for i in row_index_list:
-#     print(i)
-
-# All row labels to search through 
-
-
-# df.iat[0,0] - cell grabbing
