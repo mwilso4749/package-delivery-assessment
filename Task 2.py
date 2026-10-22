@@ -347,10 +347,10 @@ class Truck:
 # set expected time to DateTime class; None otherwise
 class Package:
     # Table Import Order: PID, Address, City, State, Zip, Deadline, Weight, Status
-    def __init__(self, pid, address, deadline, city, zip, expected_time, weight, status = 'Warehouse'): #INCORRECT
-#   def __init__(self, pid, address, city, zip, deadline, weight, status = 'Warehouse')
+    # def __init__(self, pid, address, deadline, city, zip, expected_time, weight, status = 'Warehouse'): #INCORRECT
+    def __init__(self, pid, address, city, zip, deadline, weight, status = 'Warehouse'):
         # add en route time stamp
-        # input for time print request differnet function
+        # input for time print request different function
         
         self.pid = int(pid)
         self.address = address
@@ -359,47 +359,25 @@ class Package:
         self.deadline = deadline # convert into DateTime
         self.weight = weight
         self.status = str(status)
-        
-        # expected_time
-        # address_changes = [[address, DateTime(8,00)]]
-        # status_changes = [[status, DateTime(8,00)]] 
-        # [DEPRICATED] departure_time -> JUST USE status_changes[["en route", (THIS TIME!!)]] -> function call to retrieve departure time
-        # [DEPRICATED] delivery_time -> JUST USE status_changes[["delivered", (THIS TIME!!)]] -> function call to retrieve delivery time
-        # current_truck
-        # attached_packages = []
-        # distance_coords = []
 
-        # if deadline == "EOD": self.deadline = None
-
-
+        # ===============================================
         
-        
-        self.pid = int(pid)
-        self.address = address
-        self.deadline = deadline
-        self.city = city
-        self.zip = zip
-        self.expected_time = expected_time
-        self.weight = weight
-        self.status = str(status)
+        self.expected_time = []
 
         # 2d array, holds status and time of IMPLEMENTATION
-        self.status_changes = None
+        self.address_changes = [[address, DateTime(8,00)]]
 
         # 2d array, holds address and TIME OF IMPLEMENTATION
-        self.address_changes = None
+        self.status_changes = [[status, DateTime(8,00)]] 
+        # [DEPRICATED] departure_time -> JUST USE status_changes[["en route", (THIS TIME!!)]] -> function call to retrieve departure time
+        # [DEPRICATED] delivery_time -> JUST USE status_changes[["delivered", (THIS TIME!!)]] -> function call to retrieve delivery time
         
-        # date_time() objects
-        self.departure_time = None
-        self.delivery_time = None # replace with time object
-      
         self.current_truck = None
         self.attached_packages = []
-        self.distance_row_col = [None, None]
+        self.distance_coords = [None, None]
 
-        #Redo with new import in mind
-        if expected_time == "EOD": self.expected_time = None
-        if status == 'nan': self.status = None
+        if deadline == "EOD": self.deadline = None
+
         self.package_attachment()
 
     # Fills out attached_packages with packages required to be shipped together
