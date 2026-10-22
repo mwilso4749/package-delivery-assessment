@@ -197,6 +197,7 @@ def route_sorting(): # Intial only. no new time adjustments
     distance_df = pd.read_csv('WGUPS Distance Table.csv', index_col=0)
     row_index_list = distance_df.index.tolist()
     row_columns_list = distance_df.columns.tolist()
+    
     # Loop through all sets and place index values for row + col for each package
     for package in package_table:
         if package == None: continue
@@ -346,14 +347,14 @@ class Package:
         self.status = str(status)
 
         # 2d array, holds status and time of IMPLEMENTATION
-        self.status_changes
+        self.status_changes = None
 
         # 2d array, holds address and TIME OF IMPLEMENTATION
-        self.address_changes
+        self.address_changes = None
         
         # date_time() objects
-        self.departure_time
-        self.delivery_time # replace with time object
+        self.departure_time = None
+        self.delivery_time = None # replace with time object
       
         self.current_truck = None
         self.attached_packages = []
@@ -372,7 +373,7 @@ class Package:
             self.attached_packages.append(self.pid)
 
         
-    
+    # Formats status with time for the print statement
     def status_formatting(self):
         if self.status == None:
             return
@@ -406,9 +407,30 @@ class Package:
             # return status from status_changes[0] with print statement
             # ======
             # REPEAT FOR ADDRESS (address_changes)
-        
+            return
         return
+
+class CSV:
+    def __init__(self, file):
+        self.col_label = []
+        self.row_label = []
+        self.table = []
+        self.table_loading(file)
+
+
     
+    def table_loading(self, file):
+        with open(file) as f:
+            # Column label array created
+            self.col_label = f.readline().strip().split(',')
+            # self.col_label[len(self.col_label-1)].replace("\n", "")
+
+            # Places index 0 into row labels, rest into 2d table array
+            for line in f:
+                temporary = line.strip().split(',')
+                self.row_label.append(temporary.pop(0))
+                self.table.append(temporary)
+        
 
 
 
@@ -419,7 +441,7 @@ package_truck_filtering()
 route_sorting()
 
 
-print(lookup(14))
+# print(lookup(14))
 # print(truck_time[0].strftime('%H:%M %p'))
 
 
@@ -430,4 +452,11 @@ temp_package_table = HashTable(10)
 # Truck switch into deliver after truck 1 returns
 
 
-print(Package.time_lookup(DateTime(8,30), temp_package_table))
+# print(Package.time_lookup(DateTime(8,30), temp_package_table))
+
+
+file = CSV('WGUPS Distance Table.csv')
+
+for col in file.col_label:
+    print(col, end=", ")
+
