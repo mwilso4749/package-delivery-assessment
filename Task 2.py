@@ -311,9 +311,18 @@ class HashTable:
         self.table[key] = object
 
 
-
+    # ============= REVIEW =============
     def resize(self):
-        return
+            array_size = array_size * 2
+            temporary_table = [None] * array_size
+            for i in range(int(array_size/2)):
+                if package_table[i] == None: 
+                    continue
+                temporary_table[hash_func(package_table[i].pid)] = package_table[i]
+
+            package_table = temporary_table
+
+
     def hash_function(self, pid): # must return the PACKAGE itself
         return hash(pid) % len(self.table)
 
@@ -356,7 +365,7 @@ class Package:
         self.address = address
         self.city = city
         self.zip = zip
-        self.deadline = deadline # convert into DateTime
+        self.deadline = deadline # convert into DateTime with str splits
         self.weight = weight
         self.status = str(status)
 
@@ -389,7 +398,6 @@ class Package:
             for i in range(len(self.attached_packages)): self.attached_packages[i] = int(self.attached_packages[i])
             self.attached_packages.append(self.pid)
 
-        
     # Formats status with time for the print statement
     def status_formatting(self):
         if self.status == None:
@@ -400,13 +408,12 @@ class Package:
 
         return f" :: Status: {self.status}"
 
-    # Change to Time class
+    # Change to Datetime class
     def status_update(self, status, time = [None, None]):
             if time != [None, None]:
                 self.delivery_time = time
             self.status = status
 
-    
     # add if check to change address of one package to old before a time
     def __str__(self): # , adjusted_address = self.address, adjusted_status = self.status, adjusted_time = self.time
         return f"Package ID: {self.pid} :: Address: {self.address} :: Deadline: {self.deadline} :: City: {self.city} :: Zip: {self.zip} :: Weight: {self.weight}{self.status_formatting()}"
@@ -481,7 +488,7 @@ package_table = HashTable()
 
 # for i in range package_file.table --------- (row_labels[i+1])
     # table = package_file.table
-    # package_table.insert(package_file.row_label[i], new package(table[i][0], table[i][1], etc.....))
+    # package_table.insert(package_file.row_label[i], new package(table[i][0], table[i][1], etc.....)) - [SKIP table[i][3]]
 
 
 
