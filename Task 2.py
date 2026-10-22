@@ -88,14 +88,14 @@ from datetime import datetime, timedelta
 # Launch time, 8am
 
 # SECTION A - Hash Table + Insert Function
-array_size = 10
-package_table = [None] * array_size
-truck_list = [[], [], []]
-truck_time = [datetime(1, 1, 1, hour=8), datetime(1, 1, 1, hour=8), datetime(1, 1, 1, hour=8)]
+# array_size = 10
+# package_table = [None] * array_size
+# truck_list = [[], [], []]
+# truck_time = [datetime(1, 1, 1, hour=8), datetime(1, 1, 1, hour=8), datetime(1, 1, 1, hour=8)]
 
 
 def hash_func(pid):
-    return hash(pid) % array_size
+    
 
 def insert(pid, address, deadline, city, zip, expected_time, weight, status):
     key = hash_func(pid)
@@ -300,15 +300,22 @@ def delivery(truck):
 
 # add hash_table class
 class HashTable:
-    def __init__(self, size):
-        self.table = [None] * size
+    def __init__(self):
+        self.table = [None] * 10
         return
-    def insert(self, pid):
-        return
+    
+    def insert(self, pid, object):
+        key = self.hash_function(pid)
+        if self.table[key] != None:
+            self.resize()
+        self.table[key] = object
+
+
+
     def resize(self):
         return
-    def hash_function(self, pid):
-        return
+    def hash_function(self, pid): # must return the PACKAGE itself
+        return hash(pid) % len(self.table)
 
 class DateTime:
     def __init__(self, hours, minutes):
@@ -332,11 +339,41 @@ class Truck:
         # sort by each pacakge distance to eachother
         return
 
+
+#NEEDS CLEANUP BADLY
+# deadline isnt matched right
+# move deadline into expected time
+# drop state from import call
+# set expected time to DateTime class; None otherwise
 class Package:
-    def __init__(self, pid, address, deadline, city, zip, expected_time, weight, status = 'Warehouse'): 
+    # Table Import Order: PID, Address, City, State, Zip, Deadline, Weight, Status
+    def __init__(self, pid, address, deadline, city, zip, expected_time, weight, status = 'Warehouse'): #INCORRECT
+#   def __init__(self, pid, address, city, zip, deadline, weight, status = 'Warehouse')
         # add en route time stamp
-        # horizontal report for __str__
         # input for time print request differnet function
+        
+        self.pid = int(pid)
+        self.address = address
+        self.city = city
+        self.zip = zip
+        self.deadline = deadline # convert into DateTime
+        self.weight = weight
+        self.status = str(status)
+        
+        # expected_time
+        # address_changes = [[address, DateTime(8,00)]]
+        # status_changes = [[status, DateTime(8,00)]] 
+        # [DEPRICATED] departure_time -> JUST USE status_changes[["en route", (THIS TIME!!)]] -> function call to retrieve departure time
+        # [DEPRICATED] delivery_time -> JUST USE status_changes[["delivered", (THIS TIME!!)]] -> function call to retrieve delivery time
+        # current_truck
+        # attached_packages = []
+        # distance_coords = []
+
+        # if deadline == "EOD": self.deadline = None
+
+
+        
+        
         self.pid = int(pid)
         self.address = address
         self.deadline = deadline
@@ -360,13 +397,15 @@ class Package:
         self.attached_packages = []
         self.distance_row_col = [None, None]
 
+        #Redo with new import in mind
         if expected_time == "EOD": self.expected_time = None
         if status == 'nan': self.status = None
         self.package_attachment()
 
+    # Fills out attached_packages with packages required to be shipped together
     def package_attachment(self):
         if self.status[0:7] == 'Package':
-            self.attached_packages = self.status.split(", ")
+            self.attached_packages = self.status.split("; ", ": ")
             while 'Package' in self.attached_packages:
                 self.attached_packages.remove('Package')
             for i in range(len(self.attached_packages)): self.attached_packages[i] = int(self.attached_packages[i])
@@ -379,19 +418,20 @@ class Package:
             return
 
         if self.status == 'Delivered' or self.status == 'Delayed' or self.status == 'En Route':
-            return f"\nStatus: {self.status} - {self.delivery_time}"
+            return f" :: Status: {self.status} - {self.delivery_time}"
 
-        return f"\nStatus: {self.status}"
+        return f" :: Status: {self.status}"
 
+    # Change to Time class
     def status_update(self, status, time = [None, None]):
             if time != [None, None]:
                 self.delivery_time = time
             self.status = status
 
-    # Make horizontal as a report
+    
     # add if check to change address of one package to old before a time
-    def __str__(self):
-        return f"=========================================\nPackage ID: {self.pid}\nAddress: {self.address}\nDeadline: {self.deadline}\nCity: {self.city}\nZip: {self.zip}\nWeight: {self.weight}{self.status_formatting()}\n========================================="
+    def __str__(self): # , adjusted_address = self.address, adjusted_status = self.status, adjusted_time = self.time
+        return f"Package ID: {self.pid} :: Address: {self.address} :: Deadline: {self.deadline} :: City: {self.city} :: Zip: {self.zip} :: Weight: {self.weight}{self.status_formatting()}"
 
     # add function to take time, then package (default to all) and post all reports at that time
     @staticmethod
@@ -401,8 +441,12 @@ class Package:
             # time_calculation(time, pid)
             return
 
-        def time_calculation(inner_time, package):
-            # check through package status_change array
+        for i in range(40):
+            # print(time_calculation(time, hashlookup(i+1)))
+            return
+
+        def time_calculation(inner_time, package): # returns the adjusted string with corrected information
+            # check through package status_changes array
             # inverted check- if time of implementation (status_changes[1]) > time, continue
             # return status from status_changes[0] with print statement
             # ======
@@ -417,13 +461,10 @@ class CSV:
         self.table = []
         self.table_loading(file)
 
-
-    
     def table_loading(self, file):
         with open(file) as f:
             # Column label array created
             self.col_label = f.readline().strip().split(',')
-            # self.col_label[len(self.col_label-1)].replace("\n", "")
 
             # Places index 0 into row labels, rest into 2d table array
             for line in f:
@@ -445,7 +486,7 @@ route_sorting()
 # print(truck_time[0].strftime('%H:%M %p'))
 
 
-temp_package_table = HashTable(10)
+
 #for loop inserting all packages into table instance with temp_package_table.insert(package)
 
 # Delivery
@@ -455,8 +496,22 @@ temp_package_table = HashTable(10)
 # print(Package.time_lookup(DateTime(8,30), temp_package_table))
 
 
-file = CSV('WGUPS Distance Table.csv')
+distance_file = CSV('WGUPS Distance Table.csv')
+package_file = CSV('WGUPS Package File.csv')
+package_table = HashTable()
 
-for col in file.col_label:
+
+# for i in range package_file.table --------- (row_labels[i+1])
+    # table = package_file.table
+    # package_table.insert(package_file.row_label[i], new package(table[i][0], table[i][1], etc.....))
+
+
+
+
+for col in distance_file.col_label:
     print(col, end=", ")
 
+
+
+# where do I place the package location function to ad col and row info into each packge. truck? package class? (makes package class too reliant) 
+# maybe just a funciton to call
