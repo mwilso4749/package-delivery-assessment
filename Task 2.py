@@ -82,22 +82,14 @@ Bundle by time slots. No- increment time variable?
 
 
 """
-# NO IMPORTS - csv -> csv reader
-import pandas as pd
-from datetime import datetime, timedelta
-# Launch time, 8am
 
-# SECTION A - Hash Table + Insert Function
-# array_size = 10
-# package_table = [None] * array_size
-# truck_list = [[], [], []]
-# truck_time = [datetime(1, 1, 1, hour=8), datetime(1, 1, 1, hour=8), datetime(1, 1, 1, hour=8)]
+# Launch time, 8am
 
 
 
 # Cycles through current package list. One loop to find specific truck requirements, second for FCFS package filler
 # places package ID into Truck inner list
-def package_truck_filtering(): # Just an initial...?
+def package_truck_filtering(): 
     global package_table, truck_list
     
     def truck_loading(truck_number, package_index):
@@ -165,22 +157,8 @@ def package_truck_filtering(): # Just an initial...?
 # CORRECTION: based on time driver gets into truck. Wait to call function until driver is allocated???
 # MUST be in order of time incrementation
 def route_sorting(): # Intial only. no new time adjustments
-    global truck_list, package_table, truck_time
-    distance_df = pd.read_csv('WGUPS Distance Table.csv', index_col=0)
-    row_index_list = distance_df.index.tolist()
-    row_columns_list = distance_df.columns.tolist()
+   
     
-    # Loop through all sets and place index values for row + col for each package
-    for package in package_table:
-        if package == None: continue
-        for i in range(len(row_index_list)):
-            if package.address in row_index_list[i]:
-                package.distance_row_col[0] = i
-                break
-        for i in range(len(row_columns_list)):
-            if package.address in row_columns_list[i]:
-                package.distance_row_col[1] = i
-                break
 
     # Resort based on distance from eachother
     
@@ -236,12 +214,13 @@ def route_sorting(): # Intial only. no new time adjustments
 
 
 
-# Remove package_table_import with native CSV importer
-# Remove all hash functions from above
-# Remove truck_list
+
+
+
 # Remove all time management with DateTime as Time import
 # Move package_sorting into Truck class
 # Move package_loading into Truck Classs
+# Move package_truck_filtering into Truck (static?)
 
 
 
@@ -440,6 +419,7 @@ class Package:
 
 
     # VALIDATE!!
+    # Loop through all sets and place index values for row + col for each package
     @staticmethod
     def package_coordinate_loader(table: CSV):
         for package in table:
