@@ -318,15 +318,33 @@ class Truck:
         # sort by each pacakge distance to eachother
         return
 
+class CSV:
+    def __init__(self, file):
+        self.col_label = []
+        self.row_label = []
+        self.table = []
+        self.table_loading(file)
 
+    def table_loading(self, file):
+        with open(file) as f:
+            # Column label array created
+            self.col_label = f.readline().strip().split(',')
+
+            # Places index 0 into row labels, rest into 2d table array
+            for line in f:
+                temporary = line.strip().split(',')
+                self.row_label.append(temporary.pop(0))
+                self.table.append(temporary)
+
+            self.col_label.pop(0)
+            self.row_label.pop(0)
+        
 #NEEDS CLEANUP BADLY
 # deadline isnt matched right
 # move deadline into expected time
 # drop state from import call
 # set expected time to DateTime class; None otherwise
 class Package:
-    # Table Import Order: PID, Address, City, State, Zip, Deadline, Weight, Status
-    # def __init__(self, pid, address, deadline, city, zip, expected_time, weight, status = 'Warehouse'): #INCORRECT
     def __init__(self, pid, address, city, zip, deadline, weight, status = 'Warehouse'):
         # add en route time stamp
         # input for time print request different function
@@ -353,7 +371,7 @@ class Package:
         
         self.current_truck = None
         self.attached_packages = []
-        self.distance_coords = [None, None]
+        self.distance_coords = [None, None] # [row, col]
 
         if deadline == "EOD": self.deadline = None
 
@@ -390,7 +408,19 @@ class Package:
 
     # add function to take time, then package (default to all) and post all reports at that time
     @staticmethod
-    def time_lookup(time, table: HashTable, pid = None):       
+    def time_lookup(table: HashTable, pid = None):   
+        time = None
+        while True:
+            try:
+                input_time = input("Time to report (formatted \"X:XX\"): ")
+                input_time = input_time.split(":")
+                time = DateTime(int(input_time[0], int(input_time[1])))
+                break
+            except:
+                print("Invalid time or format.")
+               
+
+
         if pid != None:
             # time_calculation(time, pid)
             return
@@ -409,24 +439,30 @@ class Package:
         return
 
 
-class CSV:
-    def __init__(self, file):
-        self.col_label = []
-        self.row_label = []
-        self.table = []
-        self.table_loading(file)
+    # VALIDATE!!
+    @staticmethod
+    def package_coordinate_loader(table: CSV):
+        for package in table:
+                if package == None: continue
+                for i in range(len(table.row_label)):
+                    if package.address in table.row_label[i]:
+                        package.distance_coords[0] = i
+                        break
+                for i in range(len(table.col_label)):
+                    if package.address in table.col_label[i]:
+                        package.distance_coords[1] = i
+                        break
 
-    def table_loading(self, file):
-        with open(file) as f:
-            # Column label array created
-            self.col_label = f.readline().strip().split(',')
 
-            # Places index 0 into row labels, rest into 2d table array
-            for line in f:
-                temporary = line.strip().split(',')
-                self.row_label.append(temporary.pop(0))
-                self.table.append(temporary)
-        
+
+
+
+
+
+
+
+
+
 
 
 
