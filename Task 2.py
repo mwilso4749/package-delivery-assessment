@@ -261,11 +261,6 @@ def route_sorting(): # Intial only. no new time adjustments
 # What was my final goal again....?
 
 
-def package_table_import(file):
-    df = pd.read_csv(file)
-    for i in range(len(df)):
-        insert(df.iloc[i].iat[0], df.iloc[i].iat[1], df.iloc[i].iat[2], df.iloc[i].iat[3], df.iloc[i].iat[4], df.iloc[i].iat[5], df.iloc[i].iat[6], df.iloc[i].iat[7])
-
 
 
 
@@ -298,7 +293,7 @@ def delivery(truck):
 # package - 2 time stamps - time of leave + arrival time
 # replace all time with date_time() class
 
-# add hash_table class
+
 class HashTable:
     def __init__(self):
         self.table = [None] * 10
@@ -325,6 +320,9 @@ class HashTable:
         if size == None: 
             size = len(self.table)
         return int(hash(pid) % size)
+
+    def lookup(self, key):
+        return self.table[self.hash_function(key)]
 
 class DateTime:
     def __init__(self, hours, minutes):
@@ -420,8 +418,7 @@ class Package:
 
     # add function to take time, then package (default to all) and post all reports at that time
     @staticmethod
-    def time_lookup(time, table: HashTable, pid = None):
-        
+    def time_lookup(time, table: HashTable, pid = None):       
         if pid != None:
             # time_calculation(time, pid)
             return
@@ -438,6 +435,7 @@ class Package:
             # REPEAT FOR ADDRESS (address_changes)
             return
         return
+
 
 class CSV:
     def __init__(self, file):
