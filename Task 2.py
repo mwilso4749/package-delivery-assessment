@@ -308,23 +308,23 @@ class HashTable:
         key = self.hash_function(pid)
         if self.table[key] != None:
             self.resize()
+        key = self.hash_function(pid)
         self.table[key] = object
 
-
-    # ============= REVIEW =============
     def resize(self):
-            array_size = array_size * 2
-            temporary_table = [None] * array_size
-            for i in range(int(array_size/2)):
+            new_table = [None] * len(self.table)*2
+
+            for i in range(len(self.table)):
                 if package_table[i] == None: 
                     continue
-                temporary_table[hash_func(package_table[i].pid)] = package_table[i]
+                new_table[self.hash_function(self.table[i].pid, len(self.table)*2)] = self.table[i]
+            
+            self.table = new_table
 
-            package_table = temporary_table
-
-
-    def hash_function(self, pid): # must return the PACKAGE itself
-        return hash(pid) % len(self.table)
+    def hash_function(self, pid, size = None): # must return the PACKAGE itself
+        if size == None: 
+            size = len(self.table)
+        return int(hash(pid) % size)
 
 class DateTime:
     def __init__(self, hours, minutes):
