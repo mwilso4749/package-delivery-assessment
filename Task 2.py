@@ -94,34 +94,6 @@ from datetime import datetime, timedelta
 # truck_time = [datetime(1, 1, 1, hour=8), datetime(1, 1, 1, hour=8), datetime(1, 1, 1, hour=8)]
 
 
-def hash_func(pid):
-    
-
-def insert(pid, address, deadline, city, zip, expected_time, weight, status):
-    key = hash_func(pid)
-    if package_table[key] != None:
-        resize()
-
-    # change to flat array? no object?
-    package_table[key] = Package(pid, address, deadline, city, zip, expected_time, weight, status)
-
-def resize():
-    global array_size, package_table
-
-    array_size = array_size * 2
-    temporary_table = [None] * array_size
-    for i in range(int(array_size/2)):
-        if package_table[i] == None: 
-            continue
-        temporary_table[hash_func(package_table[i].pid)] = package_table[i]
-
-    package_table = temporary_table
-
-# SECTION B - Lookup Function with Package ID: Connects to class .toString()
-def lookup(pid):
-    global package_table
-    return f"{package_table[hash_func(pid)]}"
-
 
 # Cycles through current package list. One loop to find specific truck requirements, second for FCFS package filler
 # places package ID into Truck inner list
@@ -458,11 +430,11 @@ class CSV:
 
 
 
-package_table_import('WGUPS Package File.csv')
+
 # print(lookup(14))
 
-package_truck_filtering()
-route_sorting()
+# package_truck_filtering()
+# route_sorting()
 
 
 # print(lookup(14))
