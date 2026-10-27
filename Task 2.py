@@ -4,133 +4,12 @@ total_mileage = 0
 
 # Cycles through current package list. One loop to find specific truck requirements, second for FCFS package filler
 # places package ID into Truck inner list
-def package_truck_filtering():
-    global package_table, truck_list
-
-    def truck_loading(truck_number, package_index):
-        truck_list[truck_number].append(package_table[package_index])
-        package_table[package_index].current_truck = truck_number
-        # package_table[package_number].status = 'En Route' --------- ADD WHEN DEPARTING TRUCK
-
-    # loads first two trucks with time sensitive
-    flip_tracker = 0
-    for i in range(len(package_table)):
-        if package_table[i] == None:
-            continue
-        if package_table[i].expected_time == None or package_table[i].status == "nan":
-            continue
-        if (
-            package_table[i].status == "Delivered"
-            or str(package_table[i].status)[0:7] == "Delayed"
-        ):
-            continue
-        truck_loading(int(flip_tracker), i)
-        if flip_tracker == 0:
-            flip_tracker = 1
-        else:
-            flip_tracker = 0
-
-    # Loads truck-specific packages
-    for i in range(len(package_table)):
-        if package_table[i] == None:
-            continue
-        if package_table[i].status[0:5] == "Truck":
-            truck_number = int(package_table[i].status[-1:])
-            # no collision or overflow handling
-            truck_loading(truck_number - 1, i)
-
-    # Loads package pairings
-    # Loads initial pacakge
-    temp_attached_packages = []
-    for i in range(len(package_table)):
-        if package_table[i] == None:
-            continue
-        # loop through all packges for attached_packages
-        # combine all arrays, store into smallest number
-        # call function below with new array
-
-        # Only checks one instance of a package pair list. not different sets
-        temp_attached_packages.extend(package_table[i].attached_packages)
-
-    # Loops to match all paired packages to same truck
-    temp_attached_packages = list(set(temp_attached_packages))
-    pivot = package_table[temp_attached_packages.pop()]
-    for package in temp_attached_packages:
-        indx = hash_func(package)
-
-        # remove all packages from respective truck
-        if package_table[indx].current_truck != None:
-            for i in range(len(truck_list[package_table[indx].current_truck])):
-                if (
-                    truck_list[package_table[indx].current_truck][i]
-                    == package_table[indx]
-                ):
-                    truck_list[package_table[indx].current_truck].pop(i)
-                    break
-
-        # match tracking to pivot
-        package_table[indx].current_truck = pivot.current_truck
-
-        # add all trucks to pivot truck
-        truck_loading(pivot.current_truck, indx)
-
-        # break? cut out all current iteration of checked numbers
-
-    return None
 
 
 # Takes truck package list, sorts by distance from warehouse, then closest after each package
 # Time calculated and set into delivery status
 # CORRECTION: based on time driver gets into truck. Wait to call function until driver is allocated???
 # MUST be in order of time incrementation
-def route_sorting():  # Intial only. no new time adjustments
-    # Resort based on distance from eachother
-
-    def truck_sort(truck, relative_time):
-        temp_array = []
-
-        # Sorting truck cargo based on distance only
-        last_compare_value = [0, 0]
-        for i in range(len(truck)):
-            lowest_dist_value = 100
-            lowest_index_value = None
-            for k in range(len(truck)):
-                # Measures least distance between each package
-                distance = distance_df.iat[
-                    truck[k].distance_row_col[0], last_compare_value[1]
-                ]
-                if str(distance) == "nan":
-                    distance = distance_df.iat[
-                        last_compare_value[0], truck[k].distance_row_col[1]
-                    ]
-                # Setting lowest package distance
-                if lowest_index_value == None or lowest_dist_value > distance:
-                    lowest_index_value = k
-                    lowest_dist_value = distance
-
-            travel_calc_minutes = int((lowest_dist_value / 18) * 60)
-            travel_time = timedelta(
-                0, 0, 0, 0, int(travel_calc_minutes % 60), int(travel_calc_minutes / 60)
-            )
-            truck[lowest_index_value].status = "En Route"
-            relative_time = relative_time + travel_time
-            truck[lowest_index_value].delivery_time = relative_time.strftime("%H:%M %p")
-            last_compare_value = truck[lowest_index_value].distance_row_col
-            temp_array.append(truck.pop(lowest_index_value))
-
-        # Change status to delivery; add in return to warehouse time?
-
-        return temp_array, relative_time
-
-    for i in range(len(truck_list)):
-        truck_list[i], truck_time[i] = truck_sort(truck_list[i], truck_time[i])
-
-    # Loop through each truck
-    # search with distance_df.loc[truck_list[i].address]
-
-    # mark all packages as en route
-    # time calculations
-    return None
 
 
 # Remove all time management with DateTime as Time import
@@ -149,7 +28,17 @@ DELIVERY:
 """
 
 
-def delivery(truck):
+def delivery(truck, driver):
+
+    # LOOP:
+    #   package.status_changes.append("En Route", driver.time)
+    # LOOP:
+    #   distance = PACKAGE COMPARISON
+    #   driver.time.add(distance/60, distance%60)
+    #   package.status_changes.append("Delivered", driver.time)
+    # distance = COMPARISON -> LAST PACKAGE, HUB
+    # driver.time.add(distance/60, distance%60)
+
     return truck
 
 
@@ -326,7 +215,7 @@ class CSV:
 # Used to track time between truck and return. Calculate from leave time + distance + return distance to hub /18,
 # save time before switching trucks. use that time when starting next truck
 class Driver:
-    def __init__(self, time):
+    def __init__(self, time: DateTime):
         self.time = time
 
 
