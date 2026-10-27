@@ -214,9 +214,32 @@ class Truck:
         self.payload = []
         self.current_time = DateTime(8, 00)  # Used for delivery and
 
-    def package_sorting(self):
+    def package_sorting(self, distance_table):  # distance table
         # sort by each pacakge distance to eachother
-        return
+        table = distance_table.table
+        temp_array = []
+
+        # Sorting truck cargo based on distance only
+        last_compare_value = [0, 0]
+        for i in range(len(self.payload)):
+            lowest_dist_value = 100
+            lowest_index_value = None
+            for k in range(len(self.payload)):
+                # Measures least distance between each package
+                distance = table[
+                    self.payload[k].distance_coords[0], last_compare_value[1]
+                ]
+                if str(distance) == "":
+                    distance = table[
+                        last_compare_value[0], self.payload[k].distance_coords[1]
+                    ]
+                # Setting lowest package distance
+                if lowest_index_value == None or lowest_dist_value > distance:
+                    lowest_index_value = k
+                    lowest_dist_value = distance
+            last_compare_value = self.payload[lowest_index_value].distance_coordinates
+            temp_array.append(self.payload.pop(lowest_index_value))
+        self.payoad = temp_array
 
     @staticmethod
     def package_loading(truck_list, table):  # Hashtable + truck list?
@@ -380,9 +403,8 @@ class Package:
         self.status = status
 
     # add if check to change address of one package to old before a time
-    def __str__(
-        self,
-    ):  # , adjusted_address = self.address, adjusted_status = self.status, adjusted_time = self.time
+    def __str__(self):
+        # , adjusted_address = self.address, adjusted_status = self.status, adjusted_time = self.time
         return f"Package ID: {self.pid} :: Address: {self.address} :: Deadline: {self.deadline} :: City: {self.city} :: Zip: {self.zip} :: Weight: {self.weight}{self.status_formatting()}"
 
     # add function to take time, then package (default to all) and post all reports at that time
