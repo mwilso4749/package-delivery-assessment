@@ -1,90 +1,6 @@
-"""
-This task is the implementation phase of the WGUPS Routing Program.
-
-The Western Governors University Parcel Service (WGUPS) needs to determine an efficient route and delivery distribution for 
-their daily local deliveries (DLD) because packages are not currently being consistently delivered by their promised deadline. 
-The Salt Lake City DLD route has three trucks, two drivers, and an average of 40 packages to deliver each day. Each package has 
-specific criteria and delivery requirements that are listed in the attached “WGUPS Package File.”
-
-Your task is to determine an algorithm, write code, and present a solution where all 40 packages will be delivered on time 
-while meeting each package’s requirements and keeping the combined total distance traveled under 140 miles for all trucks. 
-The specific delivery locations are shown on the attached “Salt Lake City Downtown Map,” and distances to each location are 
-given in the attached “WGUPS Distance Table.” The intent is to use the program for this specific location and also for many 
-other cities in each state where WGU has a presence. As such, you will need to include detailed comments to make your code 
-easy to follow and to justify the decisions you made while writing your scripts.
-
-The supervisor should be able to see, at assigned points, the progress of each truck and its packages by any of the variables 
-listed in the “WGUPS Package File,” including what has been delivered and at what time the delivery occurred.
-
-"""
-
-"""
-
-C1. Student ID commented in
-C2. Include comments in code to explain process and flow 
-
-D1. 
-
-Hash Table
-- Package ID as key
-- address
-- deadline
-- city
-- zip code
-- package weight
-- delivery status (i.e., at the hub, en route, delivered, ...)
--     *you may need to create additional statuses
-- actual delivery time
-
-•  Each truck can carry a maximum of 16 packages, and the ID number of each package is unique.
-•  The trucks travel at an average speed of 18 miles per hour and have an infinite amount of gas with no need to stop.
-•  There are no collisions.
-•  Three trucks and two drivers are available for deliveries. Each driver stays with the same truck as long as that truck is in service.
-•  Drivers leave the hub no earlier than 8:00 a.m., with the truck loaded, and can return to the hub for packages if needed.
-•  The delivery and loading times are instantaneous (i.e., no time passes while at a delivery or when moving packages to a truck at the hub). This time is factored into the calculation of the average speed of the trucks.
-•  There is up to one special note associated with a package.
-•  The delivery address for package #9, Third District Juvenile Court, is wrong and will be corrected at 10:20 a.m. WGUPS is aware that the address is incorrect and will be updated at 10:20 a.m. However, WGUPS does not know the correct address (410 S. State St., Salt Lake City, UT 84111) until 10:20 a.m.
-•  The distances provided in the “WGUPS Distance Table” are equal regardless of the direction traveled.
-•  The day ends when all 40 packages have been delivered.
-
-
-"""
-##############################################################################
-"""
-PLANNING
-Arraylist of dictionaries using key lookup?
-
-•   delivery address
-•   delivery deadline
-•   delivery city
-•   delivery zip code
-•   package weight
-•   delivery status (i.e., delayed, at the hub, en route, or delivered), including the delivery time
-
-
-Time variable
-
-
-hash_table_load_from_csv func
-
-time_sheet_generation func (handles truck-specific checks; 16 max per; change each package status)
-    truck1 
-        - load packages based on requirement first, then backfill
-        - simple sort- find closest package address, then loop through and find next closest, sorting by distance
-        - mark time starting at [0], add distance time to each pacakge expected time
-    truck2
-    truck3
-
-
-
-Reset:
-Bundle by time slots. No- increment time variable?  
-
-
-"""
 
 # Launch time, 8am
-
+total_mileage = 0
 
 
 # Cycles through current package list. One loop to find specific truck requirements, second for FCFS package filler
@@ -157,9 +73,6 @@ def package_truck_filtering():
 # CORRECTION: based on time driver gets into truck. Wait to call function until driver is allocated???
 # MUST be in order of time incrementation
 def route_sorting(): # Intial only. no new time adjustments
-   
-    
-
     # Resort based on distance from eachother
     
     def truck_sort(truck, relative_time):
@@ -208,7 +121,7 @@ def route_sorting(): # Intial only. no new time adjustments
     # time calculations
     return None        
 
-# What was my final goal again....?
+
 
 
 
@@ -221,15 +134,15 @@ def route_sorting(): # Intial only. no new time adjustments
 # Move package_sorting into Truck class
 # Move package_loading into Truck Classs
 # Move package_truck_filtering into Truck (static?)
-
+# TRACK TOTAL MILEAGE GLOBAL VARIABLE
 
 
         
 '''
 DELIVERY: 
-- Take CURRENT truck time with each time check for the following loop updates
-- loops through all packages, applies "status = en route" AND "departure_time = [time]" [CURRENT TRUCK TIME]
-- loops through schedule and applies "status = delivered" AND "delivered_time = [time]" [DISTANCE CALCULATED TIME] ->
+- Tack current DRIVER time, add distance between packages/18 into driver.time; use with status setting
+- loops through all packages, applies "status = en route" AND "departure_time = [time]" [DRIVER.TIME]
+- loops through schedule and applies "status = delivered" AND "delivered_time = [time]" [DRIVER.TIME + CALCULATED TIME FROM LAST PACKAGE] ->
     - Compare package.distant_row_col to previous, milage/18
 '''
 def delivery(truck):
@@ -286,16 +199,16 @@ class DateTime:
     def __str__(self):
         return f'{self.time[0]}:{self.time[1]}'
 
-# Finsh out and replace truck_list
 class Truck:
     def __init__(self):
         self.payload = []
         self.current_time = DateTime(8,00) # Used for delivery and 
-    def package_loading(self, package):
-        return
     def package_sorting(self):
         # sort by each pacakge distance to eachother
         return
+    @staticmethod
+    def package_loading(): # Hashtable + truck list?
+            return
 
 class CSV:
     def __init__(self, file):
@@ -317,24 +230,27 @@ class CSV:
 
             self.col_label.pop(0)
             self.row_label.pop(0)
-        
+
+# Used to track time between truck and return. Calculate from leave time + distance + return distance to hub /18, 
+# save time before switching trucks. use that time when starting next truck
+class Driver:
+    def __init__(self, time):
+        self.time = time
+
 #NEEDS CLEANUP BADLY
-# deadline isnt matched right
-# move deadline into expected time
-# drop state from import call
-# set expected time to DateTime class; None otherwise
+# Remove status and address. Only contain address_changes and status_changes
 class Package:
     def __init__(self, pid, address, city, zip, deadline, weight, status = 'Warehouse'):
         # add en route time stamp
         # input for time print request different function
         
         self.pid = int(pid)
-        self.address = address
+        # self.address = address - [DEPRICATED] use address_changes[-1][0]
         self.city = city
         self.zip = zip
         self.deadline = deadline # convert into DateTime with str splits
         self.weight = weight
-        self.status = str(status)
+        # self.status = str(status) - [DEPRICATED] use status_changes[-1][0]
 
         # ===============================================
         
@@ -435,54 +351,40 @@ class Package:
 
 
 
+# TODO:
+# - move package_loading into truck class [STATIC FUNCTION]
+# - move package_sorting into truck class
+# - complete package.package_coordinate_loader
+# - complete package.time_lookup
+# - fix package.status_update...?
+# - fix package.__str__
+# - fix package.status_formatting with corrected variable setup and DateTime
+# - add global total_mileage to each delivery (distance value)
 
 
 
 
 
 
+##########################################
+#MAIN OUTLINE:
+##########################################
 
+# LOOP while package not all delivered (one run instead?)
 
-
-
-
-
-# print(lookup(14))
-
-# package_truck_filtering()
-# route_sorting()
-
-
-# print(lookup(14))
-# print(truck_time[0].strftime('%H:%M %p'))
-
-
-
-#for loop inserting all packages into table instance with temp_package_table.insert(package)
-
-# Delivery
-# Truck switch into deliver after truck 1 returns
-
-
-# print(Package.time_lookup(DateTime(8,30), temp_package_table))
-
+driver1, driver2 = Driver(DateTime(8,00)), Driver(DateTime(8,00))
 
 distance_file = CSV('WGUPS Distance Table.csv')
 package_file = CSV('WGUPS Package File.csv')
 package_table = HashTable()
 
+# Load packages into the hashtable
+# Load packages with their table coordinates
 
-# for i in range package_file.table --------- (row_labels[i+1])
-    # table = package_file.table
-    # package_table.insert(package_file.row_label[i], new package(table[i][0], table[i][1], etc.....)) - [SKIP table[i][3]]
+truck1, truck2, truck3 = Truck(), Truck(), Truck()
 
-
-
-
-for col in distance_file.col_label:
-    print(col, end=", ")
-
-
-
-# where do I place the package location function to ad col and row info into each packge. truck? package class? (makes package class too reliant) 
-# maybe just a funciton to call
+# truck package loading function
+# LOOP truck package sorting(truck)
+# delivery(truck1, driver1)
+# delivery(truck2, driver2)
+# delivery(truck3, drive 1)
