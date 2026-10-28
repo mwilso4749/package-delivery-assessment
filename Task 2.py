@@ -296,6 +296,37 @@ class Package:
     # add function to take time, then package (default to all) and post all reports at that time
     @staticmethod
     def time_lookup(table: HashTable, pid=None):
+
+        def time_calculation(inner_time, package):
+            address = ""
+            status = ""
+            for i in range(len(package.address_changes)):
+                if package.address_changes[i][1].after(inner_time):
+                    continue
+                address = package.address_changes[i][0]
+                break
+
+            for i in range(len(package.status_changes)):
+                if package.status_changes[i][1].after(inner_time):
+                    continue
+                status = package.status_changes[i][0]
+                if status[0:9] == "Delivered" or status[0:8] == "En Route":
+                    status = f" :: Status: {status} - {package.status_changes[i][1]} :: On Truck: {package.current_truck + 1}"
+                else:
+                    status = f" :: Status: {status}"
+                break
+
+            # String Formatting with TIME
+
+            full_string = f"@{inner_time} - Package ID: {package.pid} :: Address: {address} :: Deadline: {package.deadline} :: City: {package.city} :: Zip: {package.zip} :: Weight: {package.weight}{status}"
+            # returns the adjusted string with corrected information
+            # check through package status_changes array
+            # inverted check- if time of implementation (status_changes[1]) > time, continue
+            # return status from status_changes[0] with print statement
+            # ======
+            # REPEAT FOR ADDRESS (address_changes)
+            return full_string
+
         time = None
         while True:
             try:
@@ -307,23 +338,11 @@ class Package:
                 print("Invalid time or format.")
 
         if pid != None:
-            # time_calculation(time, pid)
+            print(time_calculation(time, pid))
             return
 
         for i in range(40):
-            # print(time_calculation(time, hashlookup(i+1)))
-            return
-
-        def time_calculation(inner_time, package):
-            # returns the adjusted string with corrected information
-            # check through package status_changes array
-            # inverted check- if time of implementation (status_changes[1]) > time, continue
-            # return status from status_changes[0] with print statement
-            # ======
-            # REPEAT FOR ADDRESS (address_changes)
-            return
-
-        return
+            print(time_calculation(time, table[i]))
 
     # VALIDATE!!
     # Loop through all sets and place index values for row + col for each package
