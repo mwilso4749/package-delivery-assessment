@@ -29,17 +29,16 @@ DELIVERY:
 
 
 def delivery(truck, driver):
+    for i in range(len(truck.payload)):
+        truck.payload[i].status_changes.append("En Route", driver.time)
 
-    # LOOP:
-    #   package.status_changes.append("En Route", driver.time)
-    # LOOP:
-    #   distance = PACKAGE COMPARISON
-    #   driver.time.add(distance/60, distance%60)
-    #   package.status_changes.append("Delivered", driver.time)
-    # distance = COMPARISON -> LAST PACKAGE, HUB
-    # driver.time.add(distance/60, distance%60)
+    for i in range(len(truck.payload)):
+        driver.time.add_minutes((truck.payload_distance[i] / 18) * 60)
+        truck.payload[i].status_changes.append("Delivered", driver.time)
 
-    return truck
+    driver.time.add_minutes((truck.payload_distance[-1] / 18) * 60)
+    truck.payload = []
+    truck.payload_distance = []
 
 
 # ===========================
@@ -87,9 +86,8 @@ class HashTable:
 class DateTime:
     def __init__(self, hours, minutes):
         self.time = [hours, minutes]
-        return
 
-    def add(self, minutes):
+    def add_minutes(self, minutes):
         temp_minutes = minutes + self.time[1]
         self.time[0] += int(temp_minutes / 60)
         self.time[1] = temp_minutes % 60
@@ -101,7 +99,7 @@ class DateTime:
 class Truck:
     def __init__(self):
         self.payload = []
-        self.current_time = DateTime(8, 00)  # Used for delivery and
+        self.payload_distance = []
 
     def package_sorting(self, distance_table):  # distance table
         # sort by each pacakge distance to eachother
@@ -126,9 +124,17 @@ class Truck:
                 if lowest_index_value == None or lowest_dist_value > distance:
                     lowest_index_value = k
                     lowest_dist_value = distance
+            self.payload_distance.append(lowest_dist_value)
             last_compare_value = self.payload[lowest_index_value].distance_coordinates
             temp_array.append(self.payload.pop(lowest_index_value))
-        self.payoad = temp_array
+
+        # Add final distance from last address to HUB
+        distance = table[temp_array[-1].distance_coords[0], 0]
+        if str(distance) == "":
+            distance = table[0, temp_array[-1].distance_coords[1]]
+        self.payload_distance.append(distance)
+
+        self.payload = temp_array
 
     @staticmethod
     def package_loading(truck_list, table):  # Hashtable + truck list?
