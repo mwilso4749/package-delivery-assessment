@@ -87,13 +87,18 @@ class DateTime:
     def __init__(self, hours, minutes):
         self.time = [hours, minutes]
 
+    def __str__(self):
+        return f"{self.time[0]}:{self.time[1]}"
+
     def add_minutes(self, minutes):
         temp_minutes = minutes + self.time[1]
         self.time[0] += int(temp_minutes / 60)
         self.time[1] = temp_minutes % 60
 
-    def __str__(self):
-        return f"{self.time[0]}:{self.time[1]}"
+    def after(self, time):
+        if self.time[0] > time[0]:
+            return True
+        return self.time[1] > time[1]
 
 
 class Truck:
@@ -242,7 +247,7 @@ class Package:
 
         # ===============================================
 
-        self.expected_time = []
+        self.expected_time = None  # ??
 
         # 2d array, holds status and time of IMPLEMENTATION
         self.address_changes = [[address, DateTime(8, 00)]]
@@ -277,30 +282,16 @@ class Package:
                 self.attached_packages[i] = int(self.attached_packages[i])
             self.attached_packages.append(self.pid)
 
-    # Formats status with time for the print statement
-    def status_formatting(self):
-        if self.status == None:
-            return
-
-        if (
-            self.status == "Delivered"
-            or self.status == "Delayed"
-            or self.status == "En Route"
-        ):
-            return f" :: Status: {self.status} - {self.delivery_time}"
-
-        return f" :: Status: {self.status}"
-
-    # Change to Datetime class
-    def status_update(self, status, time=[None, None]):
-        if time != [None, None]:
-            self.delivery_time = time
-        self.status = status
-
     # add if check to change address of one package to old before a time
     def __str__(self):
-        # , adjusted_address = self.address, adjusted_status = self.status, adjusted_time = self.time
-        return f"Package ID: {self.pid} :: Address: {self.address} :: Deadline: {self.deadline} :: City: {self.city} :: Zip: {self.zip} :: Weight: {self.weight}{self.status_formatting()}"
+
+        def status_formatting():
+            status = self.status_changes[-1][0]
+            if status[0:9] == "Delivered" or status[0:8] == "En Route":
+                return f" :: Status: {status} - {self.status_changes[-1][1]} :: On Truck: {self.current_truck + 1}"
+            return f" :: Status: {status}"
+
+        return f"Package ID: {self.pid} :: Address: {self.address} :: Deadline: {self.deadline} :: City: {self.city} :: Zip: {self.zip} :: Weight: {self.weight}{status_formatting()}"
 
     # add function to take time, then package (default to all) and post all reports at that time
     @staticmethod
@@ -312,7 +303,7 @@ class Package:
                 input_time = input_time.split(":")
                 time = DateTime(int(input_time[0], int(input_time[1])))
                 break
-            except:
+            except:  # noqa: E722
                 print("Invalid time or format.")
 
         if pid != None:
@@ -323,9 +314,8 @@ class Package:
             # print(time_calculation(time, hashlookup(i+1)))
             return
 
-        def time_calculation(
-            inner_time, package
-        ):  # returns the adjusted string with corrected information
+        def time_calculation(inner_time, package):
+            # returns the adjusted string with corrected information
             # check through package status_changes array
             # inverted check- if time of implementation (status_changes[1]) > time, continue
             # return status from status_changes[0] with print statement
@@ -382,7 +372,11 @@ package_table = HashTable()
 truck_list = [Truck(), Truck(), Truck()]
 Truck.package_loading(truck_list, package_table)  # truck package loading function
 
-# LOOP truck package sorting(truck)
+for i in range(len(truck_list)):  # LOOP truck package sorting(truck)
+    truck_list[i].package_sorting(distance_file)
 # delivery(truck1, driver1)
 # delivery(truck2, driver2)
 # delivery(truck3, drive 1)
+
+
+# STILL NEED TO HANDLE DELAYS AND ADDRESS CHANGES
