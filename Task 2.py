@@ -80,7 +80,7 @@ class HashTable:
     def hash_function(self, pid, size=None):  # must return the PACKAGE itself
         if size == None:
             size = len(self.table)
-        return int(hash(pid) % size)
+        return hash(pid) % size
 
     def lookup(self, key):
         return self.table[self.hash_function(key)]
@@ -121,23 +121,26 @@ class Truck:
             lowest_index_value = None
             for k in range(len(self.payload)):
                 # Measures least distance between each package
-                distance = float(
-                    table[self.payload[k].distance_coords[0], last_compare_value[1]]
-                )
-                if str(distance) == "":
-                    distance = float(
-                        table[last_compare_value[0], self.payload[k].distance_coords[1]]
-                    )
+
+                distance = table[self.payload[k].distance_coords[0]][
+                    last_compare_value[1]
+                ]
+                if distance == "":
+                    distance = table[last_compare_value[0]][
+                        self.payload[k].distance_coords[1]
+                    ]
+                distance = float(distance)
+
                 # Setting lowest package distance
                 if lowest_index_value == None or lowest_dist_value > distance:
                     lowest_index_value = k
                     lowest_dist_value = distance
             self.payload_distance.append(lowest_dist_value)
-            last_compare_value = self.payload[lowest_index_value].distance_coordinates
+            last_compare_value = self.payload[lowest_index_value].distance_coords
             temp_array.append(self.payload.pop(lowest_index_value))
 
         # Add final distance from last address to HUB
-        distance = float(table[temp_array[-1].distance_coords[0], 0])
+        distance = float(table[temp_array[-1].distance_coords[0]][0])
         if str(distance) == "":
             distance = table[0, temp_array[-1].distance_coords[1]]
         self.payload_distance.append(distance)
@@ -146,6 +149,7 @@ class Truck:
 
     @staticmethod
     def package_loading(truck_list, table):  # Hashtable + truck list?
+        table = table.table
 
         def truck_loading(truck_number, package_index):
             truck_list[truck_number].payload.append(table[package_index])
@@ -158,7 +162,10 @@ class Truck:
                 continue
             if table[i].deadline == None:
                 continue
-            if table[i].status == "Delivered" or str(table[i].status)[0:7] == "Delayed":
+            if (
+                table[i].status_changes[-1][0] == "Delivered"
+                or str(table[i].status_changes[-1][0])[0:7] == "Delayed"
+            ):
                 continue
             truck_loading(int(flip_tracker), i)
             if flip_tracker == 0:
@@ -170,7 +177,7 @@ class Truck:
         for i in range(len(table)):
             if table[i] == None:
                 continue
-            if table[i].status[0:5] == "Truck":
+            if table[i].status_changes[-1][0][0:5] == "Truck":
                 truck_number = int(table[i].status[-1:])
                 # no collision or overflow handling
                 truck_loading(truck_number - 1, i)
@@ -186,22 +193,30 @@ class Truck:
 
         # Loops to match all paired packages to same truck
         temp_attached_packages = list(set(temp_attached_packages))
-        pivot = table[temp_attached_packages.pop()]  # THIS NEEDS CHECKING #######
-        for package_id in temp_attached_packages:
-            index = table.hash_function(package_id)
+        if temp_attached_packages != []:
+            pivot = table[temp_attached_packages.pop()]  # THIS NEEDS CHECKING #######
+            for package_id in temp_attached_packages:
+                index = table.hash_function(package_id)
 
-            # remove all packages from respective truck
-            if table[index].current_truck != None:
-                for i in range(len(truck_list[table[index].current_truck].payload)):
-                    if truck_list[table[index].current_truck][i] == table[index]:
-                        truck_list[table[index].current_truck].payload.pop(i)
+                # remove all packages from respective truck
+                if table[index].current_truck != None:
+                    for i in range(len(truck_list[table[index].current_truck].payload)):
+                        if truck_list[table[index].current_truck][i] == table[index]:
+                            truck_list[table[index].current_truck].payload.pop(i)
+                            break
+
+                # match tracking to pivot
+                table[index].current_truck = pivot.current_truck
+
+                # add all trucks to pivot truck
+                truck_loading(pivot.current_truck, index)
+
+        for i in range(len(table)):
+            if table[i].current_truck == None:
+                for k in range(len(truck_list)):
+                    if len(truck_list[k].payload) < 16:
+                        truck_loading(k, i)
                         break
-
-            # match tracking to pivot
-            table[index].current_truck = pivot.current_truck
-
-            # add all trucks to pivot truck
-            truck_loading(pivot.current_truck, index)
 
 
 class CSV:
@@ -359,13 +374,10 @@ class Package:
 def package_loading(table: HashTable, file: CSV):
     for i in range(len(file.table)):
         package_row = file.table[i]
-        status = ""
-        if len(package_row) == 7:
-            status = package_row[6]
         table.insert(
-            file.row_label[i],
+            int(file.row_label[i]),
             Package(
-                file.row_label[i],
+                int(file.row_label[i]),
                 package_row[0],
                 package_row[1],
                 package_row[3],
@@ -404,12 +416,11 @@ package_loading(package_table, package_file)  # Load packages into the hashtable
 
 
 # Load packages with their table coordinates
-for i in range(len(package_table.table)):
-    Package.package_coordinate_loader(package_table, distance_file)
+Package.package_coordinate_loader(package_table, distance_file)
 
 # Run package association function
 for i in range(len(package_table.table)):
-    Package.package_attachment()
+    package_table.table[i].package_attachment()
 
 
 truck_list = [Truck(), Truck(), Truck()]
@@ -428,7 +439,7 @@ for i in range(len(truck_list)):  # LOOP truck package sorting(truck)
 """
 DEBUGS:
 
-- Hashtable reaching size 640
-- status_changes not receiving any correct information
- -
+- excess packages not loaded onto truck
+- payload #6 does not properly copy full package object with distance coords onto truck.payload?
+-
 """
