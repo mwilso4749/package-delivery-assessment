@@ -29,13 +29,16 @@ DELIVERY:
 
 
 def delivery(truck, driver):
+    global total_mileage
     for i in range(len(truck.payload)):
         truck.payload[i].status_changes.append("En Route", driver.time)
 
     for i in range(len(truck.payload)):
+        total_mileage += truck.payload_distance[i]
         driver.time.add_minutes((truck.payload_distance[i] / 18) * 60)
         truck.payload[i].status_changes.append("Delivered", driver.time)
 
+    total_mileage += truck.payload_distance[-1]
     driver.time.add_minutes((truck.payload_distance[-1] / 18) * 60)
     truck.payload = []
     truck.payload_distance = []
@@ -96,9 +99,9 @@ class DateTime:
         self.time[1] = temp_minutes % 60
 
     def after(self, time):
-        if self.time[0] > time[0]:
-            return True
-        return self.time[1] > time[1]
+        if self.time[0] == time[0]:
+            return self.time[1] >= time[1]
+        return self.time[0] > time[0]
 
 
 class Truck:
@@ -118,13 +121,13 @@ class Truck:
             lowest_index_value = None
             for k in range(len(self.payload)):
                 # Measures least distance between each package
-                distance = table[
-                    self.payload[k].distance_coords[0], last_compare_value[1]
-                ]
+                distance = float(
+                    table[self.payload[k].distance_coords[0], last_compare_value[1]]
+                )
                 if str(distance) == "":
-                    distance = table[
-                        last_compare_value[0], self.payload[k].distance_coords[1]
-                    ]
+                    distance = float(
+                        table[last_compare_value[0], self.payload[k].distance_coords[1]]
+                    )
                 # Setting lowest package distance
                 if lowest_index_value == None or lowest_dist_value > distance:
                     lowest_index_value = k
@@ -134,7 +137,7 @@ class Truck:
             temp_array.append(self.payload.pop(lowest_index_value))
 
         # Add final distance from last address to HUB
-        distance = table[temp_array[-1].distance_coords[0], 0]
+        distance = float(table[temp_array[-1].distance_coords[0], 0])
         if str(distance) == "":
             distance = table[0, temp_array[-1].distance_coords[1]]
         self.payload_distance.append(distance)
@@ -246,8 +249,6 @@ class Package:
         # self.status = str(status) - [DEPRICATED] use status_changes[-1][0]
 
         # ===============================================
-
-        self.expected_time = None  # ??
 
         # 2d array, holds status and time of IMPLEMENTATION
         self.address_changes = [[address, DateTime(8, 00)]]
