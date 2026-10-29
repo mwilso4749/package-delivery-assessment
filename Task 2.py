@@ -69,7 +69,7 @@ class HashTable:
         new_table = [None] * len(self.table) * 2
 
         for i in range(len(self.table)):
-            if package_table[i] == None:
+            if self.table[i] == None:
                 continue
             new_table[self.hash_function(self.table[i].pid, len(self.table) * 2)] = (
                 self.table[i]
@@ -222,9 +222,6 @@ class CSV:
                 self.row_label.append(temporary.pop(0))
                 self.table.append(temporary)
 
-            self.col_label.pop(0)
-            self.row_label.pop(0)
-
 
 # Used to track time between truck and return. Calculate from leave time + distance + return distance to hub /18,
 # save time before switching trucks. use that time when starting next truck
@@ -237,9 +234,6 @@ class Driver:
 # Remove status and address. Only contain address_changes and status_changes
 class Package:
     def __init__(self, pid, address, city, zip, deadline, weight, status="Warehouse"):
-        # add en route time stamp
-        # input for time print request different function
-
         self.pid = int(pid)
         # self.address = address - [DEPRICATED] use address_changes[-1][0]
         self.city = city
@@ -275,7 +269,7 @@ class Package:
 
     # Fills out attached_packages with packages required to be shipped together
     def package_attachment(self):
-        if self.status[0:7] == "Package":
+        if self.status_changes[0][0][0:7] == "Package":
             self.attached_packages = self.status.split("; ", ": ")
             while "Package" in self.attached_packages:
                 self.attached_packages.remove("Package")
@@ -348,18 +342,38 @@ class Package:
     # VALIDATE!!
     # Loop through all sets and place index values for row + col for each package
     @staticmethod
-    def package_coordinate_loader(table: CSV):
-        for package in table:
+    def package_coordinate_loader(table, data_table: CSV):
+        for package in table.table:
             if package == None:
                 continue
-            for i in range(len(table.row_label)):
-                if package.address in table.row_label[i]:
+            for i in range(len(data_table.row_label)):
+                if package.address_changes[-1][0] in data_table.row_label[i]:
                     package.distance_coords[0] = i
                     break
-            for i in range(len(table.col_label)):
-                if package.address in table.col_label[i]:
+            for i in range(len(data_table.col_label)):
+                if package.address_changes[-1][0] in data_table.col_label[i]:
                     package.distance_coords[1] = i
                     break
+
+
+def package_loading(table: HashTable, file: CSV):
+    for i in range(len(file.table)):
+        package_row = file.table[i]
+        status = ""
+        if len(package_row) == 7:
+            status = package_row[6]
+        table.insert(
+            file.row_label[i],
+            Package(
+                file.row_label[i],
+                package_row[0],
+                package_row[1],
+                package_row[3],
+                package_row[4],
+                package_row[5],
+                package_row[6],
+            ),
+        )
 
 
 # TODO:
@@ -371,6 +385,8 @@ class Package:
 # - fix package.__str__
 # - fix package.status_formatting with corrected variable setup and DateTime
 # - add global total_mileage to each delivery (distance value)
+
+# - add re-check for new address updates and distances/coordinates on table
 
 
 ##########################################
@@ -384,10 +400,17 @@ driver1, driver2 = Driver(DateTime(8, 00)), Driver(DateTime(8, 00))
 distance_file = CSV("WGUPS Distance Table.csv")
 package_file = CSV("WGUPS Package File.csv")
 package_table = HashTable()
+package_loading(package_table, package_file)  # Load packages into the hashtable
 
-# Load packages into the hashtable
+
 # Load packages with their table coordinates
+for i in range(len(package_table.table)):
+    Package.package_coordinate_loader(package_table, distance_file)
+
 # Run package association function
+for i in range(len(package_table.table)):
+    Package.package_attachment()
+
 
 truck_list = [Truck(), Truck(), Truck()]
 Truck.package_loading(truck_list, package_table)  # truck package loading function
@@ -400,3 +423,12 @@ for i in range(len(truck_list)):  # LOOP truck package sorting(truck)
 
 
 # STILL NEED TO HANDLE DELAYS AND ADDRESS CHANGES
+
+
+"""
+DEBUGS:
+
+- Hashtable reaching size 640
+- status_changes not receiving any correct information
+ -
+"""
