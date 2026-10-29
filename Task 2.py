@@ -31,12 +31,12 @@ DELIVERY:
 def delivery(truck, driver):
     global total_mileage
     for i in range(len(truck.payload)):
-        truck.payload[i].status_changes.append("En Route", driver.time)
+        truck.payload[i].status_changes.append(["En Route", driver.time])
 
     for i in range(len(truck.payload)):
         total_mileage += truck.payload_distance[i]
         driver.time.add_minutes((truck.payload_distance[i] / 18) * 60)
-        truck.payload[i].status_changes.append("Delivered", driver.time)
+        truck.payload[i].status_changes.append(["Delivered", driver.time])
 
     total_mileage += truck.payload_distance[-1]
     driver.time.add_minutes((truck.payload_distance[-1] / 18) * 60)
@@ -99,9 +99,9 @@ class DateTime:
         self.time[1] = temp_minutes % 60
 
     def after(self, time):
-        if self.time[0] == time[0]:
-            return self.time[1] >= time[1]
-        return self.time[0] > time[0]
+        if self.time[0] == time.time[0]:
+            return self.time[1] > time.time[1]
+        return self.time[0] > time.time[0]
 
 
 class Truck:
@@ -263,6 +263,8 @@ class Package:
         self.address_changes = [[address, DateTime(8, 00)]]
 
         # 2d array, holds address and TIME OF IMPLEMENTATION
+        if status == "":
+            status = "Warehouse"
         self.status_changes = [[status, DateTime(8, 00)]]
         # [DEPRICATED] departure_time -> JUST USE status_changes[["en route", (THIS TIME!!)]] -> function call to retrieve departure time
         # [DEPRICATED] delivery_time -> JUST USE status_changes[["delivered", (THIS TIME!!)]] -> function call to retrieve delivery time
@@ -306,10 +308,12 @@ class Package:
     # add function to take time, then package (default to all) and post all reports at that time
     @staticmethod
     def time_lookup(table: HashTable, pid=None):
+        table = table.table
 
         def time_calculation(inner_time, package):
             address = ""
             status = ""
+            truck = ""
             for i in range(len(package.address_changes)):
                 if package.address_changes[i][1].after(inner_time):
                     continue
@@ -326,9 +330,11 @@ class Package:
                     status = f" :: Status: {status}"
                 break
 
+            if package.current_truck != "":
+                truck = f" :: Truck: {package.current_truck + 1}"
             # String Formatting with TIME
 
-            full_string = f"@{inner_time} - Package ID: {package.pid} :: Address: {address} :: Deadline: {package.deadline} :: City: {package.city} :: Zip: {package.zip} :: Weight: {package.weight}{status}"
+            full_string = f"@{inner_time} - Package ID: {package.pid} :: Address: {address} :: Deadline: {package.deadline} :: City: {package.city} :: Zip: {package.zip} :: Weight: {package.weight}{truck}{status}"
             # returns the adjusted string with corrected information
             # check through package status_changes array
             # inverted check- if time of implementation (status_changes[1]) > time, continue
@@ -342,7 +348,7 @@ class Package:
             try:
                 input_time = input('Time to report (formatted "X:XX"): ')
                 input_time = input_time.split(":")
-                time = DateTime(int(input_time[0], int(input_time[1])))
+                time = DateTime(int(input_time[0]), int(input_time[1]))
                 break
             except:  # noqa: E722
                 print("Invalid time or format.")
@@ -428,18 +434,24 @@ Truck.package_loading(truck_list, package_table)  # truck package loading functi
 
 for i in range(len(truck_list)):  # LOOP truck package sorting(truck)
     truck_list[i].package_sorting(distance_file)
-# delivery(truck1, driver1)
+delivery(truck_list[0], driver1)
 # delivery(truck2, driver2)
 # delivery(truck3, drive 1)
 
 
 # STILL NEED TO HANDLE DELAYS AND ADDRESS CHANGES
 
+Package.time_lookup(package_table)
 
 """
 DEBUGS:
 
-- excess packages not loaded onto truck
-- payload #6 does not properly copy full package object with distance coords onto truck.payload?
--
+- DateTime needs __str__ to add 0 for excess space (i.e. 8:0 -> 8:00)
+- Status not removing "" when being loaded into package
+- package print needs to go in order of PID not index
+- package print exchange :: for ....
+- Change status to be overridden with "En Route", "Warehouse", or "Delivered"
+    - Store package attachment, truck specifics, and errors elsewhere to be saved
+    - add address correction for delayed and address packages
+- Check if delviered @ time is working - it is not.
 """
