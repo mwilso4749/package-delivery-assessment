@@ -31,12 +31,16 @@ DELIVERY:
 def delivery(truck, driver):
     global total_mileage
     for i in range(len(truck.payload)):
-        truck.payload[i].status_changes.append(["En Route", driver.time])
+        truck.payload[i].status_changes.append(
+            ["En Route", DateTime(driver.time.time[0], driver.time.time[1])]
+        )
 
     for i in range(len(truck.payload)):
         total_mileage += truck.payload_distance[i]
         driver.time.add_minutes(int((truck.payload_distance[i] / 18) * 60))
-        truck.payload[i].status_changes.append(["Delivered", driver.time])
+        truck.payload[i].status_changes.append(
+            ["Delivered", DateTime(driver.time.time[0], driver.time.time[1])]
+        )
 
     total_mileage += truck.payload_distance[-1]
     driver.time.add_minutes(int((truck.payload_distance[-1] / 18) * 60))
@@ -312,13 +316,15 @@ class Package:
             status = ""
             truck = ""
             for i in range(len(package.address_changes)):
-                if package.address_changes[i][1].after(inner_time):
+                if not package.address_changes[i][1].after(inner_time):
                     continue
                 address = package.address_changes[i][0]
                 break
+            if address == "":
+                address = package.address_changes[-1][0]
 
             for i in range(len(package.status_changes)):
-                if package.status_changes[i][1].after(inner_time):
+                if not package.status_changes[i][1].after(inner_time):
                     continue
                 status = package.status_changes[i][0]
                 if status[0:9] == "Delivered" or status[0:8] == "En Route":
@@ -326,6 +332,12 @@ class Package:
                 else:
                     status = f" | Status: {status}"
                 break
+            if status == "":
+                status = package.status_changes[-1][0]
+                if status[0:9] == "Delivered" or status[0:8] == "En Route":
+                    status = f" | Status: {status} - {package.status_changes[-1][1]} | On Truck: {package.current_truck + 1}"
+                else:
+                    status = f" | Status: {status}"
 
             if package.current_truck != "":
                 truck = f" | Truck: {package.current_truck + 1}"
@@ -421,9 +433,8 @@ Truck.package_loading(truck_list, package_table)  # truck package loading functi
 for i in range(len(truck_list)):  # LOOP truck package sorting(truck)
     truck_list[i].package_sorting(distance_file)
 delivery(truck_list[0], driver1)
-# delivery(truck2, driver2)
-# delivery(truck3, drive 1)
-
+delivery(truck_list[1], driver2)
+delivery(truck_list[2], driver1)
 
 # STILL NEED TO HANDLE DELAYS AND ADDRESS CHANGES
 
@@ -434,8 +445,8 @@ print(package_table.lookup(14))
 """
 DEBUGS:
 - package print needs to go in order of PID not index
-- Change status to be overridden with "En Route", "Warehouse", or "Delivered"
-    - Store package attachment, truck specifics, and errors elsewhere to be saved
+
+
     - add address correction for delayed and address packages
 - hash_table.lookup(0) NOT obtaining hash index of 0 properly?
 - put delayed and address updates onto truck3 at the start
