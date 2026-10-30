@@ -35,11 +35,11 @@ def delivery(truck, driver):
 
     for i in range(len(truck.payload)):
         total_mileage += truck.payload_distance[i]
-        driver.time.add_minutes((truck.payload_distance[i] / 18) * 60)
+        driver.time.add_minutes(int((truck.payload_distance[i] / 18) * 60))
         truck.payload[i].status_changes.append(["Delivered", driver.time])
 
     total_mileage += truck.payload_distance[-1]
-    driver.time.add_minutes((truck.payload_distance[-1] / 18) * 60)
+    driver.time.add_minutes(int((truck.payload_distance[-1] / 18) * 60))
     truck.payload = []
     truck.payload_distance = []
 
@@ -91,7 +91,10 @@ class DateTime:
         self.time = [hours, minutes]
 
     def __str__(self):
-        return f"{self.time[0]}:{self.time[1]}"
+        minutes = str(self.time[1])
+        if len(minutes) == 1:
+            minutes = "0" + minutes
+        return f"{self.time[0]}:{minutes}"
 
     def add_minutes(self, minutes):
         temp_minutes = minutes + self.time[1]
@@ -303,7 +306,7 @@ class Package:
                 return f" :: Status: {status} - {self.status_changes[-1][1]} :: On Truck: {self.current_truck + 1}"
             return f" :: Status: {status}"
 
-        return f"Package ID: {self.pid} :: Address: {self.address} :: Deadline: {self.deadline} :: City: {self.city} :: Zip: {self.zip} :: Weight: {self.weight}{status_formatting()}"
+        return f"Package ID: {self.pid} :: Address: {self.address_changes[-1][0]} :: Deadline: {self.deadline} :: City: {self.city} :: Zip: {self.zip} :: Weight: {self.weight}{status_formatting()}"
 
     # add function to take time, then package (default to all) and post all reports at that time
     @staticmethod
@@ -354,11 +357,10 @@ class Package:
                 print("Invalid time or format.")
 
         if pid != None:
-            print(time_calculation(time, pid))
-            return
-
-        for i in range(40):
-            print(time_calculation(time, table[i]))
+            print(time_calculation(time, table[pid]))
+        else:
+            for i in range(40):
+                print(time_calculation(time, table[i]))
 
     # VALIDATE!!
     # Loop through all sets and place index values for row + col for each package
@@ -441,17 +443,17 @@ delivery(truck_list[0], driver1)
 
 # STILL NEED TO HANDLE DELAYS AND ADDRESS CHANGES
 
-Package.time_lookup(package_table)
+Package.time_lookup(package_table, 14)
+
+print(package_table.lookup(14))
 
 """
 DEBUGS:
-
-- DateTime needs __str__ to add 0 for excess space (i.e. 8:0 -> 8:00)
 - Status not removing "" when being loaded into package
 - package print needs to go in order of PID not index
 - package print exchange :: for ....
 - Change status to be overridden with "En Route", "Warehouse", or "Delivered"
     - Store package attachment, truck specifics, and errors elsewhere to be saved
     - add address correction for delayed and address packages
-- Check if delviered @ time is working - it is not.
+- Check if delviered @ time is working - it is not. ADJUST DELIVERY - CORRECTION: not delivery, time_lookup search issue inside status_changes
 """
