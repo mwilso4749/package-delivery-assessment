@@ -360,8 +360,8 @@ class Package:
         if pid != None:
             print(time_calculation(time, table[pid]))
         else:
-            for i in range(40):
-                temp = hash_table.lookup(i)
+            for i in range(len(table)):
+                temp = hash_table.lookup(i + 1)
                 print(time_calculation(time, temp))
         print(barrier)
 
@@ -444,10 +444,6 @@ print(package_table.lookup(14))
 
 """
 DEBUGS:
-- package print needs to go in order of PID not index
-
-
-    - add address correction for delayed and address packages
-- hash_table.lookup(0) NOT obtaining hash index of 0 properly?
+- add address correction for delayed and address packages
 - put delayed and address updates onto truck3 at the start
 """
