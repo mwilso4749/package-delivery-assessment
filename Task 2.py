@@ -142,6 +142,7 @@ class Truck:
 
     @staticmethod
     def package_loading(truck_list, table):  # Hashtable + truck list?
+        hash_table = table
         table = table.table
 
         def truck_loading(truck_number, package_index):
@@ -156,8 +157,8 @@ class Truck:
             if table[i].deadline == None:
                 continue
             if (
-                table[i].status_changes[-1][0] == "Delivered"
-                or str(table[i].status_changes[-1][0])[0:7] == "Delayed"
+                table[i].get_status() == "Delivered"
+                or str(table[i].specifications)[0:7] == "Delayed"
             ):
                 continue
             truck_loading(int(flip_tracker), i)
@@ -170,8 +171,8 @@ class Truck:
         for i in range(len(table)):
             if table[i] == None:
                 continue
-            if table[i].status_changes[-1][0][0:5] == "Truck":
-                truck_number = int(table[i].status[-1:])
+            if table[i].specifications[0:5] == "Truck":
+                truck_number = int(table[i].specifications[-1:])
                 # no collision or overflow handling
                 truck_loading(truck_number - 1, i)
 
@@ -189,12 +190,15 @@ class Truck:
         if temp_attached_packages != []:
             pivot = table[temp_attached_packages.pop()]  # THIS NEEDS CHECKING #######
             for package_id in temp_attached_packages:
-                index = table.hash_function(package_id)
+                index = hash_table.hash_function(package_id)
 
                 # remove all packages from respective truck
                 if table[index].current_truck != None:
                     for i in range(len(truck_list[table[index].current_truck].payload)):
-                        if truck_list[table[index].current_truck][i] == table[index]:
+                        if (
+                            truck_list[table[index].current_truck].payload[i]
+                            == table[index]
+                        ):
                             truck_list[table[index].current_truck].payload.pop(i)
                             break
 
@@ -239,14 +243,11 @@ class Driver:
 class Package:
     def __init__(self, pid, address, city, zip, deadline, weight, status="Warehouse"):
         self.pid = int(pid)
-        # self.address = address - [DEPRICATED] use address_changes[-1][0]
         self.city = city
         self.zip = zip
-        self.deadline = deadline  # convert into DateTime with str splits
+        self.deadline = deadline
         self.weight = weight
-        # self.status = str(status) - [DEPRICATED] use status_changes[-1][0]
-
-        # ===============================================
+        self.specifications = ""
 
         # 2d array, holds status and time of IMPLEMENTATION
         self.address_changes = [[address, DateTime(8, 00)]]
@@ -254,9 +255,15 @@ class Package:
         # 2d array, holds address and TIME OF IMPLEMENTATION
         if status == "":
             status = "Warehouse"
+        if (
+            "Delayed" in status
+            or "Truck" in status
+            or "Package" in status
+            or "Incorrect" in status
+        ):
+            self.specifications = status
+            status = "Warehouse"
         self.status_changes = [[status, DateTime(8, 00)]]
-        # [DEPRICATED] departure_time -> JUST USE status_changes[["en route", (THIS TIME!!)]] -> function call to retrieve departure time
-        # [DEPRICATED] delivery_time -> JUST USE status_changes[["delivered", (THIS TIME!!)]] -> function call to retrieve delivery time
 
         self.current_truck = None  # in __str__ must have +1 to be readable
         self.attached_packages = []
@@ -275,9 +282,10 @@ class Package:
 
     # Fills out attached_packages with packages required to be shipped together
     def package_attachment(self):
-        if self.status_changes[0][0][0:7] == "Package":
-            self.attached_packages = self.status.split("; ", ": ")
-            while "Package" in self.attached_packages:
+        if "Package" in self.specifications:
+            temp = self.specifications.replace(": ", "; ").split("; ")
+            self.attached_packages = temp
+            while "Package" in self.attached_packages or '"' in self.attached_packages:
                 self.attached_packages.remove("Package")
             for i in range(len(self.attached_packages)):
                 self.attached_packages[i] = int(self.attached_packages[i])
@@ -286,7 +294,7 @@ class Package:
     # add if check to change address of one package to old before a time
     def __str__(self):
         def status_formatting():
-            status = self.status_changes[-1][0]
+            status = self.get_status()
             if status[0:9] == "Delivered" or status[0:8] == "En Route":
                 return f" | Status: {status} - {self.status_changes[-1][1]} | On Truck: {self.current_truck + 1}"
             return f" | Status: {status}"
@@ -296,6 +304,7 @@ class Package:
     # add function to take time, then package (default to all) and post all reports at that time
     @staticmethod
     def time_lookup(table: HashTable, pid=None):
+        hash_table = table
         table = table.table
 
         def time_calculation(inner_time, package):
@@ -322,7 +331,7 @@ class Package:
                 truck = f" | Truck: {package.current_truck + 1}"
             # String Formatting with TIME
 
-            full_string = f"@{inner_time} - Package ID: {package.pid} | Address: {address} | Deadline: {package.deadline} | City: {package.city} | Zip: {package.zip} | Weight: {package.weight}{truck}{status}"
+            full_string = f"Package ID: {package.pid} | Address: {address} | Deadline: {package.deadline} | City: {package.city} | Zip: {package.zip} | Weight: {package.weight}{truck}{status}"
             return full_string
 
         time = None
@@ -334,12 +343,15 @@ class Package:
                 break
             except:  # noqa: E722
                 print("Invalid time or format.")
-
+        barrier = f"===================================  {time}  ==================================="
+        print(barrier)
         if pid != None:
             print(time_calculation(time, table[pid]))
         else:
             for i in range(40):
-                print(time_calculation(time, table[i]))
+                temp = hash_table.lookup(i)
+                print(time_calculation(time, temp))
+        print(barrier)
 
     # Loop through all sets and place index values for row + col for each package
     @staticmethod
@@ -415,17 +427,16 @@ delivery(truck_list[0], driver1)
 
 # STILL NEED TO HANDLE DELAYS AND ADDRESS CHANGES
 
-Package.time_lookup(package_table, 14)
+Package.time_lookup(package_table)
 
 print(package_table.lookup(14))
 
 """
 DEBUGS:
-- Status not removing "" when being loaded into package
 - package print needs to go in order of PID not index
-- package print exchange :: for ....
 - Change status to be overridden with "En Route", "Warehouse", or "Delivered"
     - Store package attachment, truck specifics, and errors elsewhere to be saved
     - add address correction for delayed and address packages
-- Check if delviered @ time is working - it is not. ADJUST DELIVERY - CORRECTION: not delivery, time_lookup search issue inside status_changes
+- hash_table.lookup(0) NOT obtaining hash index of 0 properly?
+- put delayed and address updates onto truck3 at the start
 """
