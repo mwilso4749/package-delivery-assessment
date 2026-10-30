@@ -44,16 +44,6 @@ def delivery(truck, driver):
     truck.payload_distance = []
 
 
-# ===========================
-#
-
-# array of all distance comparisons in a truck ???
-# interface - speciifc package status at time -> all packages at time
-# package all info print
-# package - 2 time stamps - time of leave + arrival time
-# replace all time with date_time() class
-
-
 class HashTable:
     def __init__(self):
         self.table = [None] * 10
@@ -241,15 +231,11 @@ class CSV:
                 self.table.append(temporary)
 
 
-# Used to track time between truck and return. Calculate from leave time + distance + return distance to hub /18,
-# save time before switching trucks. use that time when starting next truck
 class Driver:
     def __init__(self, time: DateTime):
         self.time = time
 
 
-# NEEDS CLEANUP BADLY
-# Remove status and address. Only contain address_changes and status_changes
 class Package:
     def __init__(self, pid, address, city, zip, deadline, weight, status="Warehouse"):
         self.pid = int(pid)
@@ -299,14 +285,13 @@ class Package:
 
     # add if check to change address of one package to old before a time
     def __str__(self):
-
         def status_formatting():
             status = self.status_changes[-1][0]
             if status[0:9] == "Delivered" or status[0:8] == "En Route":
-                return f" :: Status: {status} - {self.status_changes[-1][1]} :: On Truck: {self.current_truck + 1}"
-            return f" :: Status: {status}"
+                return f" | Status: {status} - {self.status_changes[-1][1]} | On Truck: {self.current_truck + 1}"
+            return f" | Status: {status}"
 
-        return f"Package ID: {self.pid} :: Address: {self.address_changes[-1][0]} :: Deadline: {self.deadline} :: City: {self.city} :: Zip: {self.zip} :: Weight: {self.weight}{status_formatting()}"
+        return f"Package ID: {self.pid} | Address: {self.address_changes[-1][0]} | Deadline: {self.deadline} | City: {self.city} | Zip: {self.zip} | Weight: {self.weight}{status_formatting()}"
 
     # add function to take time, then package (default to all) and post all reports at that time
     @staticmethod
@@ -328,22 +313,16 @@ class Package:
                     continue
                 status = package.status_changes[i][0]
                 if status[0:9] == "Delivered" or status[0:8] == "En Route":
-                    status = f" :: Status: {status} - {package.status_changes[i][1]} :: On Truck: {package.current_truck + 1}"
+                    status = f" | Status: {status} - {package.status_changes[i][1]} | On Truck: {package.current_truck + 1}"
                 else:
-                    status = f" :: Status: {status}"
+                    status = f" | Status: {status}"
                 break
 
             if package.current_truck != "":
-                truck = f" :: Truck: {package.current_truck + 1}"
+                truck = f" | Truck: {package.current_truck + 1}"
             # String Formatting with TIME
 
-            full_string = f"@{inner_time} - Package ID: {package.pid} :: Address: {address} :: Deadline: {package.deadline} :: City: {package.city} :: Zip: {package.zip} :: Weight: {package.weight}{truck}{status}"
-            # returns the adjusted string with corrected information
-            # check through package status_changes array
-            # inverted check- if time of implementation (status_changes[1]) > time, continue
-            # return status from status_changes[0] with print statement
-            # ======
-            # REPEAT FOR ADDRESS (address_changes)
+            full_string = f"@{inner_time} - Package ID: {package.pid} | Address: {address} | Deadline: {package.deadline} | City: {package.city} | Zip: {package.zip} | Weight: {package.weight}{truck}{status}"
             return full_string
 
         time = None
@@ -362,7 +341,6 @@ class Package:
             for i in range(40):
                 print(time_calculation(time, table[i]))
 
-    # VALIDATE!!
     # Loop through all sets and place index values for row + col for each package
     @staticmethod
     def package_coordinate_loader(table, data_table: CSV):
@@ -397,15 +375,9 @@ def package_loading(table: HashTable, file: CSV):
 
 
 # TODO:
-# - move package_loading into truck class [STATIC FUNCTION]
-# - move package_sorting into truck class
-# - complete package.package_coordinate_loader
 # - complete package.time_lookup
-# - fix package.status_update...?
-# - fix package.__str__
 # - fix package.status_formatting with corrected variable setup and DateTime
 # - add global total_mileage to each delivery (distance value)
-
 # - add re-check for new address updates and distances/coordinates on table
 
 
