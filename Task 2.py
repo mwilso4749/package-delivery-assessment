@@ -36,6 +36,24 @@ def delivery(truck, driver):
         )
 
     for i in range(len(truck.payload)):
+        if "Incorrect" in truck.payload[i].specifications:
+            Package.package_coordinate_loader(
+                Package.package_file, Package.distance_file
+            )
+
+            last_compare_value = truck.payload[i - 1].distance_coords
+
+            distance = Package.distance_file.table[truck.payload[i].distance_coords[0]][
+                last_compare_value[1]
+            ]
+            if distance == "":
+                distance = Package.distance_file.table[last_compare_value[0]][
+                    truck.payload[i].distance_coords[1]
+                ]
+            distance = float(distance)
+            truck.payload_distance[i] = distance
+            driver.time = DateTime(10, 20)
+
         total_mileage += truck.payload_distance[i]
         driver.time.add_minutes(int((truck.payload_distance[i] / 18) * 60))
         truck.payload[i].status_changes.append(
@@ -113,12 +131,16 @@ class Truck:
 
         # Sorting truck cargo based on distance only
         last_compare_value = [0, 0]
+        incorrect_index = None
         for i in range(len(self.payload)):
             lowest_dist_value = 100
-            lowest_index_value = None
-            for k in range(len(self.payload)):
-                # Measures least distance between each package
 
+            for k in range(len(self.payload)):
+                if "Incorrect" in self.payload[k].specifications:
+                    incorrect_index = k
+                    continue
+
+                # Measures least distance between each package
                 distance = table[self.payload[k].distance_coords[0]][
                     last_compare_value[1]
                 ]
@@ -135,6 +157,19 @@ class Truck:
             self.payload_distance.append(lowest_dist_value)
             last_compare_value = self.payload[lowest_index_value].distance_coords
             temp_array.append(self.payload.pop(lowest_index_value))
+
+        if incorrect_index != None:
+            distance = table[self.payload[incorrect_index].distance_coords[0]][
+                last_compare_value[1]
+            ]
+            if distance == "":
+                distance = table[last_compare_value[0]][
+                    self.payload[incorrect_index].distance_coords[1]
+                ]
+            distance = float(distance)
+            self.payload_distance.append(distance)
+            last_compare_value = self.payload[incorrect_index].distance_coords
+            temp_array.append(self.payload.pop(0))
 
         # Add final distance from last address to HUB
         distance = float(table[temp_array[-1].distance_coords[0]][0])
@@ -153,6 +188,14 @@ class Truck:
             truck_list[truck_number].payload.append(table[package_index])
             table[package_index].current_truck = truck_number
 
+        # Delayed truck placements
+        for i in range(len(table)):
+            if (
+                "Delayed" in table[i].specifications
+                or "Incorrect" in table[i].specifications
+            ):
+                truck_loading(2, i)
+
         # loads first two trucks with time sensitive
         flip_tracker = 0
         for i in range(len(table)):
@@ -161,7 +204,7 @@ class Truck:
             if table[i].deadline == None:
                 continue
             if (
-                table[i].get_status() == "Delivered"
+                str(table[i].specifications) == "Delivered"
                 or str(table[i].specifications)[0:7] == "Delayed"
             ):
                 continue
@@ -177,7 +220,6 @@ class Truck:
                 continue
             if table[i].specifications[0:5] == "Truck":
                 truck_number = int(table[i].specifications[-1:])
-                # no collision or overflow handling
                 truck_loading(truck_number - 1, i)
 
         # Loads package pairings
@@ -212,6 +254,7 @@ class Truck:
                 # add all trucks to pivot truck
                 truck_loading(pivot.current_truck, index)
 
+        # Filters remaining packages onto the trucks
         for i in range(len(table)):
             if table[i].current_truck == None:
                 for k in range(len(truck_list)):
@@ -245,6 +288,9 @@ class Driver:
 
 
 class Package:
+    distance_file = CSV("WGUPS Distance Table.csv")
+    package_file = CSV("WGUPS Package File.csv")
+
     def __init__(self, pid, address, city, zip, deadline, weight, status="Warehouse"):
         self.pid = int(pid)
         self.city = city
@@ -277,12 +323,22 @@ class Package:
             self.deadline = None
 
         self.package_attachment()
+        self.incorrect_address_correction()
 
     def get_status(self):
         return self.status_changes[-1][0]
 
     def get_address(self):
         return self.address_changes[-1][0]
+
+    def incorrect_address_correction(self):
+        if "Incorrect" in self.specifications:
+            opener = self.specifications.index("[")
+            closer = self.specifications.index("]")
+            parsed_string = self.specifications[opener + 1 : closer]
+            parsed_string = parsed_string.split(";")
+            time = parsed_string[1].split(":")
+            self.address_changes.append([parsed_string[0], DateTime(time[0], time[1])])
 
     # Fills out attached_packages with packages required to be shipped together
     def package_attachment(self):
@@ -434,16 +490,40 @@ for i in range(len(truck_list)):  # LOOP truck package sorting(truck)
     truck_list[i].package_sorting(distance_file)
 delivery(truck_list[0], driver1)
 delivery(truck_list[1], driver2)
+
+driver1.time = DateTime(9, 5)
 delivery(truck_list[2], driver1)
 
 # STILL NEED TO HANDLE DELAYS AND ADDRESS CHANGES
 
-Package.time_lookup(package_table)
+# Package.time_lookup(package_table)
 
-print(package_table.lookup(14))
+# print(package_table.lookup(14))
 
-"""
+
+def string_return(package):
+    status = ""
+    for i in range(len(package.status_changes)):
+        status = (
+            status
+            + f" | {package.status_changes[i][0]} @{package.status_changes[i][1]}"
+        )
+    return f"{package.deadline}{status} | {package.current_truck + 1}"
+
+
+print(string_return(package_table.lookup(6)))
+
+"""|
 DEBUGS:
 - add address correction for delayed and address packages
 - put delayed and address updates onto truck3 at the start
 """
+
+
+# cycle through delivery and check for address update?
+
+# delayed delivery method? set driver time to correction and deliver
+# ---OR---
+#
+
+# move delayed onto truck 3, delay truck 3 until delay time
