@@ -1,31 +1,9 @@
-# Launch time, 8am
+"""
+Michael Wilson
+Student ID: 011963870
+"""
+
 total_mileage = 0
-
-
-# Cycles through current package list. One loop to find specific truck requirements, second for FCFS package filler
-# places package ID into Truck inner list
-
-
-# Takes truck package list, sorts by distance from warehouse, then closest after each package
-# Time calculated and set into delivery status
-# CORRECTION: based on time driver gets into truck. Wait to call function until driver is allocated???
-# MUST be in order of time incrementation
-
-
-# Remove all time management with DateTime as Time import
-# Move package_sorting into Truck class
-# Move package_loading into Truck Classs
-# Move package_truck_filtering into Truck (static?)
-# TRACK TOTAL MILEAGE GLOBAL VARIABLE
-
-
-"""
-DELIVERY: 
-- Tack current DRIVER time, add distance between packages/18 into driver.time; use with status setting
-- loops through all packages, applies "status = en route" AND "departure_time = [time]" [DRIVER.TIME]
-- loops through schedule and applies "status = delivered" AND "delivered_time = [time]" [DRIVER.TIME + CALCULATED TIME FROM LAST PACKAGE] ->
-    - Compare package.distant_row_col to previous, milage/18
-"""
 
 
 def delivery(truck, driver):
@@ -89,7 +67,7 @@ class HashTable:
 
         self.table = new_table
 
-    def hash_function(self, pid, size=None):  # must return the PACKAGE itself
+    def hash_function(self, pid, size=None):
         if size == None:
             size = len(self.table)
         return hash(pid) % size
@@ -386,6 +364,7 @@ class Package:
             for i in range(len(package.status_changes)):
                 if not package.status_changes[i][1].after(inner_time):
                     continue
+
                 status = package.status_changes[i][0]
                 if status[0:9] == "Delivered" or status[0:8] == "En Route":
                     status = f" | Status: {status} - {package.status_changes[i][1]} | On Truck: {package.current_truck + 1}"
@@ -458,13 +437,6 @@ def package_loading(table: HashTable, file: CSV):
         )
 
 
-# TODO:
-# - complete package.time_lookup
-# - fix package.status_formatting with corrected variable setup and DateTime
-# - add global total_mileage to each delivery (distance value)
-# - add re-check for new address updates and distances/coordinates on table
-
-
 ##########################################
 # MAIN OUTLINE:
 ##########################################
@@ -499,36 +471,15 @@ delivery(truck_list[1], driver2)
 driver1.time = DateTime(9, 5)
 delivery(truck_list[2], driver1)
 
-# STILL NEED TO HANDLE DELAYS AND ADDRESS CHANGES
 
-Package.time_lookup(Package.package_table)
-
-# print(package_table.lookup(14))
-
-
-# def string_return(package):
-#     status = ""
-#     for i in range(len(package.status_changes)):
-#         status = (
-#             status
-#             + f" | {package.status_changes[i][0]} @{package.status_changes[i][1]}"
-#         )
-#     return f"{package.deadline}{status} | {package.current_truck + 1}"
+def string_return(package):
+    status = ""
+    for i in range(len(package.status_changes)):
+        status = (
+            status
+            + f" | {package.status_changes[i][0]} @{package.status_changes[i][1]}"
+        )
+    return f"{package.deadline}{status} | {package.current_truck + 1}"
 
 
-# print(string_return(Package.package_table.lookup(6)))
-
-"""|
-DEBUGS:
-- add address correction for delayed and address packages
-- put delayed and address updates onto truck3 at the start
-"""
-
-
-# cycle through delivery and check for address update?
-
-# delayed delivery method? set driver time to correction and deliver
-# ---OR---
-#
-
-# move delayed onto truck 3, delay truck 3 until delay time
+print(string_return(Package.package_table.lookup(9)))
