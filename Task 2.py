@@ -6,13 +6,17 @@ Student ID: 011963870
 total_mileage = 0
 
 
+# Handles Delivery: Status time setting; time management
 def delivery(truck, driver):
     global total_mileage
+
+    # Sets "En Route" status into each package once truck leaves hub
     for i in range(len(truck.payload)):
         truck.payload[i].status_changes.append(
             ["En Route", DateTime(driver.time.time[0], driver.time.time[1])]
         )
 
+    # Sets "Delivery" status into each package
     for i in range(len(truck.payload)):
         if "Incorrect" in truck.payload[i].specifications:
             Package.package_coordinate_loader(
@@ -48,6 +52,7 @@ class HashTable:
     def __init__(self):
         self.table = [None] * 10
 
+    # Inserts object into the table
     def insert(self, pid, object):
         key = self.hash_function(pid)
         if self.table[key] != None:
@@ -55,6 +60,7 @@ class HashTable:
         key = self.hash_function(pid)
         self.table[key] = object
 
+    # Doubles to handle collisions, then rehases and replaces
     def resize(self):
         new_table = [None] * len(self.table) * 2
 
@@ -67,16 +73,19 @@ class HashTable:
 
         self.table = new_table
 
+    # Obtains current calculation for hashed value
     def hash_function(self, pid, size=None):
         if size == None:
             size = len(self.table)
         return hash(pid) % size
 
+    # Retrieve specific key object
     def lookup(self, key):
         return self.table[self.hash_function(key)]
 
 
 class DateTime:
+    # Class focused on handling time management; [Hour, Minutes]
     def __init__(self, hours, minutes):
         self.time = [hours, minutes]
 
@@ -86,11 +95,14 @@ class DateTime:
             minutes = "0" + minutes
         return f"{self.time[0]}:{minutes}"
 
+    # Adds an unfiltered amount of minutes into current time
     def add_minutes(self, minutes):
         temp_minutes = minutes + self.time[1]
         self.time[0] += int(temp_minutes / 60)
         self.time[1] = temp_minutes % 60
 
+    # Compares two DateTime objects
+    # TRUE if SELF time >= to COMPARED time
     def after(self, time):
         if self.time[0] == time.time[0]:
             return self.time[1] >= time.time[1]
@@ -102,8 +114,8 @@ class Truck:
         self.payload = []
         self.payload_distance = []
 
-    def package_sorting(self, distance_table):  # distance table
-        # sort by each pacakge distance to eachother
+    # Sorts package within one truck object by distance using distance table
+    def package_sorting(self, distance_table):
         table = distance_table.table
         temp_array = []
 
@@ -118,7 +130,7 @@ class Truck:
                     incorrect_index = k
                     continue
 
-                # Measures least distance between each package
+                # Measuring least distance between each package
                 distance = table[self.payload[k].distance_coords[0]][
                     last_compare_value[1]
                 ]
@@ -128,16 +140,19 @@ class Truck:
                     ]
                 distance = float(distance)
 
-                # Setting lowest package distance
+                # Setting lowest package distance and lowest index for comparison
                 if lowest_index_value == None or lowest_dist_value > distance:
                     lowest_index_value = k
                     lowest_dist_value = distance
             if lowest_index_value == None:
                 continue
+
+            # Attaching lowest compared package
             self.payload_distance.append(lowest_dist_value)
             last_compare_value = self.payload[lowest_index_value].distance_coords
             temp_array.append(self.payload.pop(lowest_index_value))
 
+        # Special case for packages with incorrect addresses updated at a time
         if incorrect_index != None:
             distance = table[self.payload[incorrect_index].distance_coords[0]][
                 last_compare_value[1]
@@ -151,7 +166,7 @@ class Truck:
             last_compare_value = self.payload[incorrect_index].distance_coords
             temp_array.append(self.payload.pop(0))
 
-        # Add final distance from last address to HUB
+        # Adds final distance measurement for truck to return to hub
         distance = float(table[temp_array[-1].distance_coords[0]][0])
         if str(distance) == "":
             distance = table[0, temp_array[-1].distance_coords[1]]
@@ -159,6 +174,8 @@ class Truck:
 
         self.payload = temp_array
 
+    # Loads packages onto truck beds to maximum available extent
+    # Can be called repetitively to reload trucks
     @staticmethod
     def package_loading(truck_list, table):  # Hashtable + truck list?
         hash_table = table
@@ -168,7 +185,7 @@ class Truck:
             truck_list[truck_number].payload.append(table[package_index])
             table[package_index].current_truck = truck_number
 
-        # Delayed truck placements
+        # Placing all delayed and Incorrect addresses onto spare bed for later use
         for i in range(len(table)):
             if (
                 "Delayed" in table[i].specifications
@@ -176,7 +193,7 @@ class Truck:
             ):
                 truck_loading(2, i)
 
-        # loads first two trucks with time sensitive
+        # Loading active truck beds with time-sensitive packages for immediate delivery
         flip_tracker = 0
         for i in range(len(table)):
             if table[i] == None:
@@ -194,7 +211,7 @@ class Truck:
             else:
                 flip_tracker = 0
 
-        # Loads truck-specific packages
+        # Loading truck-specific packages
         for i in range(len(table)):
             if table[i] == None:
                 continue
@@ -203,8 +220,8 @@ class Truck:
                 truck_loading(truck_number - 1, i)
 
         # Loads package pairings
-        # Loads initial package
         temp_attached_packages = []
+        # Loads initial package
         for i in range(len(table)):
             if table[i] == None:
                 continue
@@ -250,6 +267,7 @@ class CSV:
         self.table = []
         self.table_loading(file)
 
+    # Parses .csv file into Column and Row Labels, then the table information itself
     def table_loading(self, file):
         with open(file) as f:
             # Column label array created
@@ -277,12 +295,13 @@ class Package:
         self.zip = zip
         self.deadline = deadline
         self.weight = weight
-        self.specifications = ""
+        self.specifications = ""  # Holds specific package instructions
 
-        # 2d array, holds status and time of IMPLEMENTATION
-        self.address_changes = [[address, DateTime(8, 00)]]
+        # self.deadline corrections
+        if deadline == "EOD":
+            self.deadline = None
 
-        # 2d array, holds address and TIME OF IMPLEMENTATION
+        # Loads self.specifications
         if status == "":
             status = "Warehouse"
         if "Truck" in status or "Package" in status or "Incorrect" in status:
@@ -291,24 +310,28 @@ class Package:
         elif "Delayed" in status:
             self.specifications = status
 
+        # 2d array, holds address and time of IMPLEMENTATION
+        self.address_changes = [[address, DateTime(8, 00)]]
+
+        # 2d array, holds status and time of IMPLEMENTATION
         self.status_changes = [[status, DateTime(8, 00)]]
 
         self.current_truck = None  # in __str__ must have +1 to be readable
-        self.attached_packages = []
-        self.distance_coords = [None, None]  # [row, col]
-
-        if deadline == "EOD":
-            self.deadline = None
+        self.attached_packages = []  # List of packages that this one must be attached to
+        self.distance_coords = [None, None]  # [row, col] on the table
 
         self.package_attachment()
         self.incorrect_address_correction()
 
+    # Simplified manner of retrieving the current status
     def get_status(self):
         return self.status_changes[-1][0]
 
+    # Simplified manner of retrieving the current address
     def get_address(self):
         return self.address_changes[-1][0]
 
+    # Adds correct address to address_changes with the time it will change at
     def incorrect_address_correction(self):
         if "Incorrect" in self.specifications:
             opener = self.specifications.index("[")
@@ -320,7 +343,7 @@ class Package:
                 [parsed_string[0], DateTime(int(time[0]), int(time[1]))]
             )
 
-    # Fills out attached_packages with packages required to be shipped together
+    # Fills out self.attached_packages with packages required to be shipped together
     def package_attachment(self):
         if "Package" in self.specifications:
             temp = self.specifications.replace(": ", "; ").split("; ")
@@ -331,7 +354,6 @@ class Package:
                 self.attached_packages[i] = int(self.attached_packages[i])
             self.attached_packages.append(self.pid)
 
-    # add if check to change address of one package to old before a time
     def __str__(self):
         def status_formatting():
             status = self.get_status()
@@ -341,7 +363,7 @@ class Package:
 
         return f"Package ID: {self.pid} | Address: {self.address_changes[-1][0]} | Deadline: {self.deadline} | City: {self.city} | Zip: {self.zip} | Weight: {self.weight}{status_formatting()}"
 
-    # add function to take time, then package (default to all) and post all reports at that time
+    # Prints all packages at time inputted. Can print specific package if requested
     @staticmethod
     def time_lookup(table: HashTable, pid=None):
 
@@ -425,6 +447,7 @@ class Package:
                     break
 
 
+# Loads Package.package_table (hashtable) with each package and all relevant information
 def package_loading(table: HashTable, file: CSV):
     for i in range(len(file.table)):
         package_row = file.table[i]
@@ -443,10 +466,8 @@ def package_loading(table: HashTable, file: CSV):
 
 
 ##########################################
-# MAIN OUTLINE:
+# MAIN:
 ##########################################
-
-# LOOP while package not all delivered (one run instead?)
 
 driver1, driver2 = Driver(DateTime(8, 00)), Driver(DateTime(8, 00))
 
@@ -462,18 +483,19 @@ Package.package_coordinate_loader(Package.package_table, distance_file)
 for i in range(len(Package.package_table.table)):
     Package.package_table.table[i].package_attachment()
 
-
+# Truck package loading function
 truck_list = [Truck(), Truck(), Truck()]
-Truck.package_loading(
-    truck_list, Package.package_table
-)  # truck package loading function
+Truck.package_loading(truck_list, Package.package_table)
 
-for i in range(len(truck_list)):  # LOOP truck package sorting(truck)
+# Package sort each truck
+for i in range(len(truck_list)):
     truck_list[i].package_sorting(distance_file)
 delivery(truck_list[0], driver1)
 delivery(truck_list[1], driver2)
 driver1.time = DateTime(9, 5)
 delivery(truck_list[2], driver1)
+
+# Finished; Delivers and time stamps completed for audit and review
 
 
 Package.time_lookup(Package.package_table, 9)
