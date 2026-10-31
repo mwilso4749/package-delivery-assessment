@@ -38,7 +38,7 @@ def delivery(truck, driver):
     for i in range(len(truck.payload)):
         if "Incorrect" in truck.payload[i].specifications:
             Package.package_coordinate_loader(
-                Package.package_file, Package.distance_file
+                Package.package_table, Package.distance_file
             )
 
             last_compare_value = truck.payload[i - 1].distance_coords
@@ -134,7 +134,7 @@ class Truck:
         incorrect_index = None
         for i in range(len(self.payload)):
             lowest_dist_value = 100
-
+            lowest_index_value = None
             for k in range(len(self.payload)):
                 if "Incorrect" in self.payload[k].specifications:
                     incorrect_index = k
@@ -154,6 +154,8 @@ class Truck:
                 if lowest_index_value == None or lowest_dist_value > distance:
                     lowest_index_value = k
                     lowest_dist_value = distance
+            if lowest_index_value == None:
+                continue
             self.payload_distance.append(lowest_dist_value)
             last_compare_value = self.payload[lowest_index_value].distance_coords
             temp_array.append(self.payload.pop(lowest_index_value))
@@ -289,7 +291,7 @@ class Driver:
 
 class Package:
     distance_file = CSV("WGUPS Distance Table.csv")
-    package_file = CSV("WGUPS Package File.csv")
+    package_table = HashTable()
 
     def __init__(self, pid, address, city, zip, deadline, weight, status="Warehouse"):
         self.pid = int(pid)
@@ -338,7 +340,9 @@ class Package:
             parsed_string = self.specifications[opener + 1 : closer]
             parsed_string = parsed_string.split(";")
             time = parsed_string[1].split(":")
-            self.address_changes.append([parsed_string[0], DateTime(time[0], time[1])])
+            self.address_changes.append(
+                [parsed_string[0], DateTime(int(time[0]), int(time[1]))]
+            )
 
     # Fills out attached_packages with packages required to be shipped together
     def package_attachment(self):
@@ -471,20 +475,21 @@ driver1, driver2 = Driver(DateTime(8, 00)), Driver(DateTime(8, 00))
 
 distance_file = CSV("WGUPS Distance Table.csv")
 package_file = CSV("WGUPS Package File.csv")
-package_table = HashTable()
-package_loading(package_table, package_file)  # Load packages into the hashtable
+package_loading(Package.package_table, package_file)  # Load packages into the hashtable
 
 
 # Load packages with their table coordinates
-Package.package_coordinate_loader(package_table, distance_file)
+Package.package_coordinate_loader(Package.package_table, distance_file)
 
 # Run package association function
-for i in range(len(package_table.table)):
-    package_table.table[i].package_attachment()
+for i in range(len(Package.package_table.table)):
+    Package.package_table.table[i].package_attachment()
 
 
 truck_list = [Truck(), Truck(), Truck()]
-Truck.package_loading(truck_list, package_table)  # truck package loading function
+Truck.package_loading(
+    truck_list, Package.package_table
+)  # truck package loading function
 
 for i in range(len(truck_list)):  # LOOP truck package sorting(truck)
     truck_list[i].package_sorting(distance_file)
@@ -496,22 +501,22 @@ delivery(truck_list[2], driver1)
 
 # STILL NEED TO HANDLE DELAYS AND ADDRESS CHANGES
 
-# Package.time_lookup(package_table)
+Package.time_lookup(Package.package_table)
 
 # print(package_table.lookup(14))
 
 
-def string_return(package):
-    status = ""
-    for i in range(len(package.status_changes)):
-        status = (
-            status
-            + f" | {package.status_changes[i][0]} @{package.status_changes[i][1]}"
-        )
-    return f"{package.deadline}{status} | {package.current_truck + 1}"
+# def string_return(package):
+#     status = ""
+#     for i in range(len(package.status_changes)):
+#         status = (
+#             status
+#             + f" | {package.status_changes[i][0]} @{package.status_changes[i][1]}"
+#         )
+#     return f"{package.deadline}{status} | {package.current_truck + 1}"
 
 
-print(string_return(package_table.lookup(6)))
+# print(string_return(Package.package_table.lookup(6)))
 
 """|
 DEBUGS:
