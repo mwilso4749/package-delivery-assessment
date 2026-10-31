@@ -93,7 +93,7 @@ class DateTime:
 
     def after(self, time):
         if self.time[0] == time.time[0]:
-            return self.time[1] > time.time[1]
+            return self.time[1] >= time.time[1]
         return self.time[0] > time.time[0]
 
 
@@ -285,14 +285,12 @@ class Package:
         # 2d array, holds address and TIME OF IMPLEMENTATION
         if status == "":
             status = "Warehouse"
-        if (
-            "Delayed" in status
-            or "Truck" in status
-            or "Package" in status
-            or "Incorrect" in status
-        ):
+        if "Truck" in status or "Package" in status or "Incorrect" in status:
             self.specifications = status
             status = "Warehouse"
+        elif "Delayed" in status:
+            self.specifications = status
+
         self.status_changes = [[status, DateTime(8, 00)]]
 
         self.current_truck = None  # in __str__ must have +1 to be readable
@@ -353,21 +351,25 @@ class Package:
             address = ""
             status = ""
             truck = ""
+            address_list = None
             for i in range(len(package.address_changes)):
                 if not package.address_changes[i][1].after(inner_time):
+                    address_list = package.address_changes[i]
                     continue
-                address = package.address_changes[i][0]
+                address = address_list[0]
                 break
             if address == "":
                 address = package.address_changes[-1][0]
 
+            status_list = None
             for i in range(len(package.status_changes)):
                 if not package.status_changes[i][1].after(inner_time):
+                    status_list = package.status_changes[i]
                     continue
 
-                status = package.status_changes[i][0]
+                status = status_list[0]
                 if status[0:9] == "Delivered" or status[0:8] == "En Route":
-                    status = f" | Status: {status} - {package.status_changes[i][1]} | On Truck: {package.current_truck + 1}"
+                    status = f" | Status: {status} - {status_list[1]} | On Truck: {package.current_truck + 1}"
                 else:
                     status = f" | Status: {status}"
                 break
@@ -467,19 +469,28 @@ for i in range(len(truck_list)):  # LOOP truck package sorting(truck)
     truck_list[i].package_sorting(distance_file)
 delivery(truck_list[0], driver1)
 delivery(truck_list[1], driver2)
-
 driver1.time = DateTime(9, 5)
 delivery(truck_list[2], driver1)
 
 
-def string_return(package):
-    status = ""
-    for i in range(len(package.status_changes)):
-        status = (
-            status
-            + f" | {package.status_changes[i][0]} @{package.status_changes[i][1]}"
-        )
-    return f"{package.deadline}{status} | {package.current_truck + 1}"
+Package.time_lookup(Package.package_table, 9)
+
+# def string_return(package):
+#     status = ""
+#     for i in range(len(package.status_changes)):
+#         status = (
+#             status
+#             + f" | {package.status_changes[i][0]} @{package.status_changes[i][1]}"
+#         )
+#     return f"{package.deadline}{status} | {package.current_truck + 1}"
 
 
-print(string_return(Package.package_table.lookup(9)))
+# print(string_return(Package.package_table.lookup(9)))
+
+
+"""
+Todo
+time.after not working in time_lookup
+needs to print delay status
+
+"""
