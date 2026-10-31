@@ -344,6 +344,7 @@ class Package:
     # add function to take time, then package (default to all) and post all reports at that time
     @staticmethod
     def time_lookup(table: HashTable, pid=None):
+
         hash_table = table
         table = table.table
 
@@ -404,6 +405,8 @@ class Package:
             for i in range(len(table)):
                 temp = hash_table.lookup(i + 1)
                 print(time_calculation(time, temp))
+
+        print(f"Total Mileage: {int(total_mileage)}")
         print(barrier)
 
     # Loop through all sets and place index values for row + col for each package
@@ -490,7 +493,8 @@ Package.time_lookup(Package.package_table, 9)
 
 """
 Todo
-time.after not working in time_lookup
-needs to print delay status
-
+- structural and guideline comments
+- SS of 3 time sets with mileage
+- Identified what would be done differently
+- Step H and step F
 """
